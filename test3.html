@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Antibiotic Name and Dosage</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2>Enter Antibiotic Name and Dosage</h2>
+    <form action="submit.php" method="POST">
+        <div class="mb-2">
+            <label for="antibioticName" class="form-label">Antibiotic Name</label>
+            <input type="text" class="form-control" id="antibioticName" name="antibiotic_name" required>
+        </div>
+
+        <div class="mb-2">
+            <label for="dosage" class="form-label">Dosage</label>
+            <input type="text" class="form-control" id="dosage" name="dosage[]" >
+        </div>
+
+        <div id="dosageFields"></div>
+
+        <!-- Container for buttons with space between them -->
+        <div class="d-flex mt-3">
+            <button type="button" class="btn btn-primary me-3" id="addDosageBtn">Add Another Dosage</button>
+            <button type="submit" class="btn btn-success">Submit</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('addDosageBtn').addEventListener('click', function() {
+        const dosageFields = document.getElementById('dosageFields');
+        const newDosageField = document.createElement('div');
+        newDosageField.classList.add('mb-3');
+        newDosageField.innerHTML = `
+            <label for="dosage" class="form-label">Dosage</label>
+            <input type="text" class="form-control" name="dosage[]" required>
+        `;
+        dosageFields.appendChild(newDosageField);
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
