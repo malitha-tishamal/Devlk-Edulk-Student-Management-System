@@ -148,10 +148,21 @@ session_start();
                                         </div>
 
                                         <div class="col-12">
-                                          <label for="mobileNumber" class="form-label">Mobile Number</label>
+                                          <label for="mobileNumber" class="form-label">Mobile Number (Personal)</label>
                                               <div class="input-group">
                                                 <span class="input-group-text">+94</span>
                                                 <input type="tel" class="form-control" id="mobileNumber" name="mobile" placeholder="712345678" oninput="validateMobile(this)" required>
+                                                <div class="invalid-feedback" style="font-size:14px;" id="numberErrorMessage">
+                                                    Please enter the mobile number
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12">
+                                          <label for="mobileNumber" class="form-label">Mobile Number (Home)</label>
+                                              <div class="input-group">
+                                                <span class="input-group-text">+94</span>
+                                                <input type="tel" class="form-control" id="mobileNumber" name="mobile2" placeholder="412345678" oninput="validateMobile(this)" required>
                                                 <div class="invalid-feedback" style="font-size:14px;" id="numberErrorMessage">
                                                     Please enter the mobile number
                                                 </div>

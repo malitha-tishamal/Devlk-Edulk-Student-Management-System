@@ -9,10 +9,10 @@
         // Check if it's localhost or production
         if ($host == 'localhost') {
             // Localhost path with project folder
-            return $protocol . $host . '/Devlk-Data-Collect/';
+            return $protocol . $host . '/Devlk-Edulk-Student-Management-System/';
         } else {
             // Production base URL
-            return $protocol . $host . '/Devlk-Data-Collect/';
+            return $protocol . $host . '/Devlk-Edulk-Student-Management-System/';
         }
     }
 

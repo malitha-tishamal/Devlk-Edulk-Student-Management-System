@@ -1,13 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 4.9.0.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: May 06, 2025 at 06:39 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Host: sql113.infinityfree.com
+-- Generation Time: Jun 25, 2025 at 10:07 AM
+-- Server version: 10.6.22-MariaDB
+-- PHP Version: 7.2.22
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -18,7 +19,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `students_db`
+-- Database: `if0_38329700_students_db`
 --
 
 -- --------------------------------------------------------
@@ -41,6 +42,13 @@ CREATE TABLE `admins` (
   `created_at` datetime DEFAULT current_timestamp(),
   `last_login` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `admins`
+--
+
+INSERT INTO `admins` (`id`, `name`, `regno`, `nic`, `email`, `gender`, `mobile`, `password`, `status`, `profile_picture`, `created_at`, `last_login`) VALUES
+(3, 'Mithun Chameera', 'gal/it/2324/f/0043', '200400211211', 'mithunchameera7@gmail.com', 'Male', '760099206', '$2y$10$U6E9uqdhneVtHvcy1eyTdeSabXSrpZAA/Gglu0wtFtiyU28SsjpZ2', 'rejected', 'uploads/profile_pictures/default.jpg', '2025-06-15 07:59:36', '2025-06-17 10:59:41');
 
 -- --------------------------------------------------------
 
@@ -66,7 +74,7 @@ CREATE TABLE `sadmins` (
 --
 
 INSERT INTO `sadmins` (`id`, `name`, `nic`, `email`, `mobile`, `password`, `status`, `profile_picture`, `created_at`, `last_login`) VALUES
-(1, 'Malitha Tishamal', '20002202615', 'malithatishamal@gmail.com', '771000001', '$2y$10$wc.2njjqODl2guzQnvGmieCLFsJnHV/8x.zF90ONUQKxKWBrDEPHy', 'approved', 'uploads/profile_pictures/6818d0f1cf442-411001152_1557287805017611_3900716309730349802_n1.jpg', '2025-05-05 20:12:59', '2025-05-06 10:04:56');
+(1, 'Malitha Tishamal', '20002202615', 'malithatishamal@gmail.com', '771000001', '$2y$10$wc.2njjqODl2guzQnvGmieCLFsJnHV/8x.zF90ONUQKxKWBrDEPHy', 'approved', 'uploads/profile_pictures/6818d0f1cf442-411001152_1557287805017611_3900716309730349802_n1.jpg', '2025-05-05 20:12:59', '2025-06-25 13:17:26');
 
 -- --------------------------------------------------------
 
@@ -84,6 +92,7 @@ CREATE TABLE `students` (
   `address` text DEFAULT NULL,
   `nowstatus` varchar(50) DEFAULT NULL,
   `mobile` varchar(15) DEFAULT NULL,
+  `mobile2` varchar(10) NOT NULL,
   `password` varchar(255) DEFAULT NULL,
   `status` enum('pending','approved','rejected') DEFAULT 'approved',
   `created_at` datetime DEFAULT current_timestamp(),
@@ -94,14 +103,6 @@ CREATE TABLE `students` (
   `linkedin` varchar(200) NOT NULL,
   `github` varchar(200) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `students`
---
-
-INSERT INTO `students` (`id`, `name`, `regno`, `nic`, `email`, `gender`, `address`, `nowstatus`, `mobile`, `password`, `status`, `created_at`, `last_login`, `profile_picture`, `blog`, `facebook`, `linkedin`, `github`) VALUES
-(2, 'Malitha Tishamal', 'TEST', '200202222620', 'malithatishamal@email.com', 'Male', 'test', 'Home', '771000001', '$2y$10$r/QXuyYBE.vtw1NGoCH3euHyHgXLYhrAk/GF5DNpV.fx3aCfAiXHK', 'approved', '2025-05-04 19:30:00', '2025-05-06 09:44:13', 'uploads/profile_pictures/6818c72e62d69-411001152_1557287805017611_3900716309730349802_n1.jpg', '', '', 'https://www.linkedin.com/in/malitha-tishamal', ''),
-(3, 'Malitha', 'test2', '200202222625', 'testlecture@gmail.com', 'Male', 'test', 'Bord', '785530992', '$2y$10$RFmjNDeVJVsZOru89kjUzu8T8wqYEfV.MTfqrhpPIKqYAjp7TndCa', 'approved', '2025-05-06 09:42:33', NULL, 'uploads/profile_pictures/default.jpg', '', '', '', '');
 
 -- --------------------------------------------------------
 
@@ -194,7 +195,7 @@ ALTER TABLE `subjects`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `sadmins`

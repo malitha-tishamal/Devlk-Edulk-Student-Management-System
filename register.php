@@ -2,18 +2,30 @@
 session_start();
 require_once "includes/db-conn.php";
 
-// Validate required POST fields
-$requiredFields = ['username', 'regno', 'nic', 'email', 'gender', 'address', 'nowstatus', 'mobile', 'password'];
+// Utility: return JSON or set session + redirect
+function respond($status, $message, $isAjax = false) {
+    if ($isAjax) {
+        echo json_encode(['status' => $status, 'message' => $message]);
+    } else {
+        $_SESSION['status'] = $status;
+        $_SESSION['message'] = $message;
+        header("Location: pages-signup.php");
+    }
+    exit();
+}
+
+// Check if request is AJAX
+$isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+// Required fields
+$requiredFields = ['username', 'regno', 'nic', 'email', 'gender', 'address', 'nowstatus', 'mobile', 'mobile2', 'password'];
 foreach ($requiredFields as $field) {
     if (empty($_POST[$field])) {
-        $_SESSION['status'] = 'error';
-        $_SESSION['message'] = ucfirst($field) . " is required.";
-        header("Location: pages-signup.php"); // Redirect back to the form page
-        exit();
+        respond('error', ucfirst($field) . " is required.", $isAjax);
     }
 }
 
-// Sanitize and assign variables
+// Sanitize inputs
 $name       = trim($_POST['username']);
 $regno      = strtoupper(trim($_POST['regno']));
 $nic        = strtoupper(trim($_POST['nic']));
@@ -21,53 +33,42 @@ $email      = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
 $gender     = $_POST['gender'];
 $address    = trim($_POST['address']);
 $nowstatus  = $_POST['nowstatus'];
-$mobile     = trim($_POST['mobile']);
+$mobile     = trim($_POST['mobile']);     // personal
+$mobile2    = trim($_POST['mobile2']);    // home
 $password   = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-// NIC validation
+// NIC format check (old and new formats)
 if (!preg_match("/^(\d{9}[VXvx]|\d{12})$/", $nic)) {
-    $_SESSION['status'] = 'error';
-    $_SESSION['message'] = "Invalid NIC format.";
-    header("Location: pages-signup.php");
-    exit();
+    respond('error', "Invalid NIC format.", $isAjax);
 }
 
-// Mobile number validation
-if (!preg_match("/^7\d{8}$/", $mobile)) {
-    $_SESSION['status'] = 'error';
-    $_SESSION['message'] = "Invalid mobile number. Use format 7XXXXXXXX.";
-    header("Location: pages-signup.php");
-    exit();
+// Mobile validation (+94 7XXXXXXXX)
+if (!preg_match("/^7\d{8}$/", $mobile) || !preg_match("/^7\d{8}$/", $mobile2)) {
+    respond('error', "Invalid mobile number(s). Use format 7XXXXXXXX.", $isAjax);
 }
 
-// Check for duplicate regno or email
+// Check for existing regno or email
 $check = $conn->prepare("SELECT id FROM students WHERE regno = ? OR email = ?");
 $check->bind_param("ss", $regno, $email);
 $check->execute();
 $result = $check->get_result();
 
 if ($result->num_rows > 0) {
-    $_SESSION['status'] = 'error';
-    $_SESSION['message'] = "Registration number or email already exists.";
-    header("Location: pages-signup.php");
-    exit();
+    respond('error', "Registration number or email already exists.", $isAjax);
 }
 
-// Insert the user
-$stmt = $conn->prepare("INSERT INTO students (name, regno, nic, email, gender, address, nowstatus, mobile, password)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("sssssssss", $name, $regno, $nic, $email, $gender, $address, $nowstatus, $mobile, $password);
+// Insert user
+$stmt = $conn->prepare("INSERT INTO students 
+    (name, regno, nic, email, gender, address, nowstatus, mobile, mobile2, password)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+$stmt->bind_param("ssssssssss", 
+    $name, $regno, $nic, $email, $gender, $address, $nowstatus, $mobile, $mobile2, $password);
 
 if ($stmt->execute()) {
-    $_SESSION['status'] = 'success';
-    $_SESSION['message'] = 'Account created successfully.';
-    header("Location: pages-signup.php"); // Redirect to show success message
-    exit();
+    respond('success', "Account created successfully.", $isAjax);
 } else {
-    $_SESSION['status'] = 'error';
-    $_SESSION['message'] = 'Failed to create account.';
-    header("Location: pages-signup.php");
-    exit();
+    respond('error', "Failed to create account. Please try again.", $isAjax);
 }
 
 // Cleanup

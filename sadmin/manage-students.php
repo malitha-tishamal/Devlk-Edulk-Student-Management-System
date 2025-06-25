@@ -116,14 +116,16 @@ $result = $conn->query($sql);
                                         <th>Now</th>
 
                                        
-                                        <th>Mobile</th>
+                                        <th>Mobile(Personal)</th>
+                                        <th>Mobile(Home)</th>
                                         <th>Status</th>
+                                        <th></th>
                                         <th>Action</th>
                                         <th></th>
                                         <th></th>
                                     </tr>
                                     <tr>
-                                        <th colspan="11" class="text-center"></th>
+                                        <th colspan="12" class="text-center"></th>
                                         <th class="text-center">Approve</th>
                                         <th class="text-center">Disable</th>
                                         <th class="text-center">Delete</th>
@@ -145,6 +147,7 @@ $result = $conn->query($sql);
                                             echo "<td>" . $row['nowstatus'] . "</td>";
                                             
                                             echo "<td>" . $row['mobile'] . "</td>";
+                                            echo "<td>" . $row['mobile2'] . "</td>";
 
                                             // Status Column with Color
                                             echo "<td>";
