@@ -1,5 +1,4 @@
 <?php
-// manage-files.php
 session_start();
 require_once '../includes/db-conn.php';
 
@@ -43,8 +42,17 @@ if ($selectedSemester !== '') {
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Manage Active Students - EduWide</title>
+    <title>Manage Resources - EduWide</title>
     <?php include_once("../includes/css-links-inc.php"); ?>
+    <style>
+        #uploadLoader {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
 <?php include_once("../includes/header.php") ?>
@@ -121,6 +129,15 @@ if ($selectedSemester !== '') {
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Upload Animation Loader -->
+                                <div id="uploadLoader" class="text-center my-3" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Uploading...</span>
+                                    </div>
+                                    <p class="mt-2">Uploading files, please wait...</p>
+                                </div>
+
                                 <div class="mb-3">
                                     <button type="button" class="btn btn-secondary btn-sm" id="addSectionBtn">+ Add More</button>
                                     <button type="submit" class="btn btn-primary float-end">Upload All Files</button>
@@ -128,10 +145,10 @@ if ($selectedSemester !== '') {
                             </form>
 
                             <script>
+                                // Add/Remove Sections
                                 document.getElementById("addSectionBtn").addEventListener("click", function () {
                                     const section = document.querySelector(".upload-section");
                                     const clone = section.cloneNode(true);
-
                                     clone.querySelectorAll("input, select").forEach(el => el.value = "");
                                     document.getElementById("upload-sections").appendChild(clone);
                                 });
@@ -143,6 +160,16 @@ if ($selectedSemester !== '') {
                                             e.target.closest(".upload-section").remove();
                                         }
                                     }
+                                });
+
+                                // Show Loader on Form Submit
+                                const uploadForm = document.getElementById('multiFileForm');
+                                const uploadLoader = document.getElementById('uploadLoader');
+
+                                uploadForm.addEventListener('submit', function () {
+                                    uploadLoader.style.display = 'block';
+                                    const allInputs = uploadForm.querySelectorAll("input, select, button");
+                                    allInputs.forEach(el => el.disabled = true);
                                 });
                             </script>
 
