@@ -25,6 +25,12 @@
             </a>
         </li>
 
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="https://malithatishamal.42web.io/?i=1#about">
+                <i class="bi bi-code-square"></i> <span>Developer<br>About Me</span>
+            </a>
+        </li>
+
         <!-- <li class="nav-item">
             <a class="nav-link collapsed" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
                 <i class="bi bi-layout-text-window-reverse"></i><span>Tables</span><i class="bi bi-chevron-down ms-auto"></i>
