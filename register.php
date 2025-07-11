@@ -43,9 +43,9 @@ if (!preg_match("/^(\d{9}[VXvx]|\d{12})$/", $nic)) {
 }
 
 // Mobile validation (+94 7XXXXXXXX)
-if (!preg_match("/^7\d{8}$/", $mobile) || !preg_match("/^7\d{8}$/", $mobile2)) {
-    respond('error', "Invalid mobile number(s). Use format 7XXXXXXXX.", $isAjax);
-}
+//if (!preg_match("/^7\d{8}$/", $mobile) || !preg_match("/^7\d{8}$/", $mobile2)) {
+   // respond('error', "Invalid mobile number(s). Use format 7XXXXXXXX.", $isAjax);
+//}
 
 // Check for existing regno or email
 $check = $conn->prepare("SELECT id FROM students WHERE regno = ? OR email = ?");

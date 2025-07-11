@@ -15,6 +15,12 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link" href="pages-guests-logdata.php">
+                 <i class="bi bi-person-gear"></i> <span>Guests</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#antibiotics-nav" role="button">
                <i class="bi bi-person-gear"></i> <span>Admins</span> <i class="bi bi-chevron-down ms-auto"></i>
             </a>
