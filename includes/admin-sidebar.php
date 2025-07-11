@@ -39,6 +39,20 @@
             </ul>
         </li>
 
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#wards-nav2" role="button">
+               <i class="bi bi-download"></i> <span>Downloads</span> <i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="wards-nav2" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+                <li>
+                    <a href="manage-files.php">
+                        <i class="bi bi-circle"></i> <span>Add  / Manage</span>
+                    </a>
+                </li>
+                
+            </ul>
+        </li>
+
 
         <li class="nav-item">
             <a class="nav-link collapsed" href="user-profile.php">
@@ -49,6 +63,12 @@
         <li class="nav-item">
             <a class="nav-link collapsed" href="logout.php">
                 <i class="bi bi-box-arrow-right"></i> <span>Log Out</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="https://malithatishamal.42web.io/?i=1#about">
+                <i class="bi bi-code-square"></i> <span>Developer<br>About Me</span>
             </a>
         </li>
 

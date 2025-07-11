@@ -4,31 +4,9 @@
     <ul class="sidebar-nav" id="sidebar-nav">
 
         <li class="nav-item">
-            <a class="nav-link collapsed" href="user-profile.php">
-                <i class="bi bi-person-circle"></i>
-                <span>Profile</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link collapsed"  href="pages-courses.php">
-               <i class="bi bi-book"></i></i></i><span>Course Content</span>
-            </a>
-
-            
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="pages-resoursces.php">
-               <i class="bi bi-download"></i>
-                <span>Downloads</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="logout.php">
+            <a class="nav-link collapsed" href="index.php">
                 <i class="bi bi-box-arrow-right"></i>
-                <span>Log Out</span>
+                <span>Login</span>
             </a>
         </li>
 

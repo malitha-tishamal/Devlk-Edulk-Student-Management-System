@@ -1,14 +1,15 @@
 <?php
+// manage-files.php
 session_start();
 require_once '../includes/db-conn.php';
 
-if (!isset($_SESSION['sadmin_id'])) {
+if (!isset($_SESSION['admin_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
-$user_id = $_SESSION['sadmin_id'];
-$sql = "SELECT name, email, nic, mobile, profile_picture FROM sadmins WHERE id = ?";
+$user_id = $_SESSION['admin_id'];
+$sql = "SELECT name, email, nic, mobile, profile_picture FROM admins WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -22,8 +23,8 @@ while ($row = $semQuery->fetch_assoc()) {
     $semesters[] = $row['semester'];
 }
 
-$selectedSemester = isset($_GET['semester']) ? $_GET['semester'] : '';
-$selectedSubjectId = isset($_GET['subject']) ? $_GET['subject'] : '';
+$selectedSemester = $_GET['semester'] ?? '';
+$selectedSubjectId = $_GET['subject'] ?? '';
 
 $subjects = [];
 if ($selectedSemester !== '') {
@@ -47,7 +48,7 @@ if ($selectedSemester !== '') {
 </head>
 <body>
 <?php include_once("../includes/header.php") ?>
-<?php include_once("../includes/sadmin-sidebar.php") ?>
+<?php include_once("../includes/admin-sidebar.php") ?>
 <main id="main" class="main">
     <div class="pagetitle">
         <h1>Manage Resources</h1>
@@ -64,7 +65,6 @@ if ($selectedSemester !== '') {
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
-
                         <h5 class="card-title">Select Semester & Subject</h5>
                         <form method="GET" class="mb-3">
                             <div class="row">
@@ -79,25 +79,19 @@ if ($selectedSemester !== '') {
                                     </select>
                                 </div>
                                 <?php if (!empty($subjects)): ?>
-                                <div class="col-md-4">
-                                    <select name="subject" class="form-select" onchange="this.form.submit()">
-                                        <option value="">-- All Subjects --</option>
-                                        <?php foreach ($subjects as $subject): ?>
-                                            <option value="<?= $subject['id'] ?>" <?= $selectedSubjectId == $subject['id'] ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($subject['name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
+                                    <div class="col-md-4">
+                                        <select name="subject" class="form-select" onchange="this.form.submit()">
+                                            <option value="">-- All Subjects --</option>
+                                            <?php foreach ($subjects as $subject): ?>
+                                                <option value="<?= $subject['id'] ?>" <?= $selectedSubjectId == $subject['id'] ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($subject['name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                         </form>
-
-                        <?php if (isset($_GET['upload'])): ?>
-                            <div class="alert alert-<?= $_GET['upload'] === 'success' ? 'success' : 'danger' ?>" role="alert">
-                                <?= htmlspecialchars($_GET['msg'] ?? '') ?>
-                            </div>
-                        <?php endif; ?>
 
                         <?php if ($selectedSemester !== ''): ?>
                             <h5 class="card-title">File Upload</h5>
@@ -137,7 +131,6 @@ if ($selectedSemester !== '') {
                                     <button type="submit" class="btn btn-primary float-end">Upload All Files</button>
                                 </div>
                             </form>
-
                             <script>
                                 document.getElementById("addSectionBtn").addEventListener("click", function () {
                                     const section = document.querySelector(".upload-section");
@@ -145,7 +138,6 @@ if ($selectedSemester !== '') {
                                     clone.querySelectorAll("input, select").forEach(el => el.value = "");
                                     document.getElementById("upload-sections").appendChild(clone);
                                 });
-
                                 document.addEventListener("click", function (e) {
                                     if (e.target.classList.contains("remove-section")) {
                                         const total = document.querySelectorAll(".upload-section").length;
@@ -155,24 +147,14 @@ if ($selectedSemester !== '') {
                                     }
                                 });
                             </script>
-
                             <h5 class="card-title mt-4">Uploaded Files</h5>
                             <?php
-                            $subjectGroupQuery = $conn->prepare("
-                                SELECT DISTINCT s.id, s.name 
-                                FROM tuition_files tf 
-                                JOIN subjects s ON tf.subject_id = s.id 
-                                WHERE s.semester = ? 
-                                ORDER BY s.name ASC
-                            ");
+                            $subjectGroupQuery = $conn->prepare("SELECT DISTINCT s.id, s.name FROM tuition_files tf JOIN subjects s ON tf.subject_id = s.id WHERE s.semester = ? ORDER BY s.name ASC");
                             $subjectGroupQuery->bind_param("s", $selectedSemester);
                             $subjectGroupQuery->execute();
                             $subjectResult = $subjectGroupQuery->get_result();
-
                             while ($subject = $subjectResult->fetch_assoc()):
-                                if ($selectedSubjectId && $selectedSubjectId != $subject['id']) {
-                                    continue;
-                                }
+                                if ($selectedSubjectId && $selectedSubjectId != $subject['id']) continue;
                             ?>
                                 <h5 class="mt-4 text-primary"><?= htmlspecialchars($subject['name']) ?></h5>
                                 <table class="table table-bordered mb-4">
@@ -187,13 +169,7 @@ if ($selectedSemester !== '') {
                                     </thead>
                                     <tbody>
                                         <?php
-                                        $fileQuery = $conn->query("
-                                            SELECT * FROM tuition_files 
-                                            WHERE subject_id = " . intval($subject['id']) . " 
-                                            ORDER BY 
-                                                CASE category WHEN 'Notes' THEN 0 ELSE 1 END, 
-                                                uploaded_at DESC
-                                        ");
+                                        $fileQuery = $conn->query("SELECT * FROM tuition_files WHERE subject_id = " . intval($subject['id']) . " ORDER BY uploaded_at DESC");
                                         while ($row = $fileQuery->fetch_assoc()):
                                         ?>
                                         <tr>
@@ -205,12 +181,12 @@ if ($selectedSemester !== '') {
                                             </span></td>
                                             <td>
                                                 <?php if ($row['status'] !== 'active'): ?>
-                                                    <a href="change-file-status.php?id=<?= $row['id'] ?>&status=active&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-success">Activate</a>
+                                                    <a href="change-file-status.php?id=<?= $row['id'] ?>&status=active&semester=<?= urlencode($selectedSemester) ?>" class="btn btn-sm btn-success">Activate</a>
                                                 <?php endif; ?>
                                                 <?php if ($row['status'] !== 'inactive'): ?>
-                                                    <a href="change-file-status.php?id=<?= $row['id'] ?>&status=inactive&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-secondary">Disable</a>
+                                                    <a href="change-file-status.php?id=<?= $row['id'] ?>&status=inactive&semester=<?= urlencode($selectedSemester) ?>" class="btn btn-sm btn-secondary">Disable</a>
                                                 <?php endif; ?>
-                                                <a href="delete-file.php?id=<?= $row['id'] ?>&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this file?')">Delete</a>
+                                                <a href="delete-file.php?id=<?= $row['id'] ?>&semester=<?= urlencode($selectedSemester) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this file?')">Delete</a>
                                             </td>
                                         </tr>
                                         <?php endwhile; ?>
@@ -218,7 +194,6 @@ if ($selectedSemester !== '') {
                                 </table>
                             <?php endwhile; $subjectGroupQuery->close(); ?>
                         <?php endif; ?>
-
                     </div>
                 </div>
             </div>

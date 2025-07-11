@@ -9,7 +9,7 @@ session_start();
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-    <title>Create Account - Edulk</title>
+    <title>Create Lecture Account - Edulk</title>
     <meta content="" name="description">
     <meta content="" name="keywords">
 
@@ -55,12 +55,6 @@ session_start();
                 }
             }, 10000);
 
-            // If success message, redirect to index.php after 10 seconds
-            <?php if ($_SESSION['status'] == 'success'): ?>
-                setTimeout(function() {
-                    window.location.href = 'index.php'; // Redirect after 10 seconds
-                }, 10000); // Delay 10 seconds before redirecting
-            <?php endif; ?>
         </script>
 
         <?php
@@ -90,7 +84,7 @@ session_start();
                                         <!-- <p class="text-center small">Enter your username & password to login</p> -->
                                     </div>
 
-                                    <form action="register.php" method="POST" class="row g-3 needs-validation" novalidate>
+                                    <form action="lecure-register.php" method="POST" class="row g-3 needs-validation" novalidate>
 
                                         <div class="col-12">
                                          <label for="name" class="form-label">Name</label>
@@ -99,15 +93,6 @@ session_start();
                                                 Please enter the name
                                             </div>
                                         </div>
-
-                                        <div class="col-12">
-                                         <label for="name" class="form-label">Reg No</label>
-                                            <input type="text" class="form-control" id="regno" name="regno" placeholder="GAL/IT/2425/F/0000" required>
-                                            <div class="invalid-feedback" style="font-size:14px" id="">
-                                                Please Registration No
-                                            </div>
-                                        </div>
-
 
                                         <div class="col-12">
                                          <label for="nicNumber" class="form-label">NIC Number</label>
@@ -126,77 +111,15 @@ session_start();
                                         </div>
 
                                         <div class="col-12">
-                                            <label class="form-label">Gender</label> <br>
-                                            <input type="radio" name="gender" value="Male" id="maleRadio" required> <label for="maleRadio">Male</label>
-                                            &nbsp;&nbsp;&nbsp;&nbsp;
-                                            <input type="radio" name="gender" value="Female" id="femaleRadio" required> <label for="bordRadio">Female</label>
-                                        </div>
-
-                                        <div class="col-12">
-                                          <label for="address" class="form-label">Address</label>
-                                          <input type="textarea" class="form-control" id="address" name="address">
-                                            <div class="invalid-feedback" style="font-size:14px" id="">
-                                                Please enter Address
+                                          <label for="mobileNumber" class="form-label">Mobile Number</label>
+                                              <div class="input-group">
+                                                <span class="input-group-text">+94</span>
+                                                <input type="tel" class="form-control" id="mobileNumber" name="mobile" placeholder="712345678" oninput="validateMobile(this)" required>
+                                                <div class="invalid-feedback" style="font-size:14px;" id="numberErrorMessage">
+                                                    Please enter the mobile number
+                                                </div>
                                             </div>
                                         </div>
-
-                                        <div class="col-12">
-                                            <label class="form-label">Are you</label> <br>
-                                            <input type="radio" name="nowstatus" value="Home" id="homeRadio" required> <label for="homeRadio">Home</label>
-                                            &nbsp;&nbsp;&nbsp;&nbsp;
-                                            <input type="radio" name="nowstatus" value="Bord" id="bordRadio" required> <label for="bordRadio">Bord</label>
-                                        </div>
-
-                                        <div class="col-12">
-                                          <label for="mobileNumberPersonal" class="form-label">Mobile Number (Personal)</label>
-                                          <div class="input-group">
-                                            <span class="input-group-text">+94</span>
-                                            <input type="tel" class="form-control" id="mobileNumberPersonal" name="mobile" placeholder="712345678" oninput="validateMobileNumbers()" required>
-                                          </div>
-                                          <div class="invalid-feedback" id="personalError" style="font-size:14px;">
-                                            Please enter a valid personal mobile number.
-                                          </div>
-                                        </div>
-
-                                        <div class="col-12">
-                                          <label for="mobileNumberHome" class="form-label">Mobile Number (Home)</label>
-                                          <div class="input-group">
-                                            <span class="input-group-text">+94</span>
-                                            <input type="tel" class="form-control" id="mobileNumberHome" name="mobile2" placeholder="412345678" oninput="validateMobileNumbers()" required>
-                                          </div>
-                                          <div class="invalid-feedback" id="homeError" style="font-size:14px;">
-                                            Please enter a valid home mobile number.
-                                          </div>
-                                          <div class="text-danger" id="duplicateError" style="font-size:14px; display: none;">
-                                            Personal and Home numbers cannot be the same.
-                                          </div>
-                                        </div>
-
-                                            <script>
-                                                function validateMobileNumbers() {
-                                                  const personalInput = document.getElementById("mobileNumberPersonal");
-                                                  const homeInput = document.getElementById("mobileNumberHome");
-                                                  const duplicateError = document.getElementById("duplicateError");
-
-                                                  const personal = personalInput.value.trim();
-                                                  const home = homeInput.value.trim();
-
-                                                  // Reset error styles and message
-                                                  personalInput.classList.remove('is-invalid');
-                                                  homeInput.classList.remove('is-invalid');
-                                                  duplicateError.style.display = 'none';
-
-                                                  // Check if both numbers are entered and the same
-                                                  if (personal && home && personal === home) {
-                                                    personalInput.classList.add('is-invalid');
-                                                    homeInput.classList.add('is-invalid');
-                                                    duplicateError.style.display = 'block';
-                                                  }
-                                                }
-                                                </script>
-
-
-
 
                                         <div class="col-12">
                                           <label for="password" class="form-label">Password</label>
@@ -229,6 +152,10 @@ session_start();
 
                                         <div class="col-12">
                                           <p class="small mb-0">Already have an account? <a href="index.php">Log in</a></p>
+                                        </div>
+
+                                        <div class="col-12">
+                                          <p class="small mb-0">Are You Student an account? <a href="pages-signup.php">Log in</a></p>
                                         </div>
                                       </form>
                                 </div>

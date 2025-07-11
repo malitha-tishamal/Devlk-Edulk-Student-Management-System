@@ -2,7 +2,7 @@
 session_start();
 require_once '../includes/db-conn.php';
 
-if (!isset($_SESSION['sadmin_id'])) {
+if (!isset($_SESSION['admin_id'])) {
     header("Location: ../index.php");
     exit();
 }
