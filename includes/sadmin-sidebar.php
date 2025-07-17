@@ -39,18 +39,53 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#lectures-nav" role="button">
+               <i class="bi bi-person-gear"></i> <span>Lectures</span> <i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="lectures-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+                <li>
+                    <a href="pages-add-lecture.php">
+                        <i class="bi bi-circle"></i> <span>Add Lecture</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="manage-lectures.php">
+                        <i class="bi bi-circle"></i> <span>Manage Lectures</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pages-assign-subject.php">
+                        <i class="bi bi-circle"></i> <span>Assign Subjects</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="pages-assign-subjects.php">
+                        <i class="bi bi-circle"></i> <span>Assign Details</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="pages-assignments-manage.php">
+                        <i class="bi bi-circle"></i> <span>Manage Assign Details</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#analyze-nav" role="button">
-               <i class="bi bi-person-lines-fill"></i> <span>Batch Admins</span> <i class="bi bi-chevron-down ms-auto"></i>
+               <i class="bi bi-person-lines-fill"></i> <span>Batch Representer</span> <i class="bi bi-chevron-down ms-auto"></i>
             </a>
             <ul id="analyze-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
                 <li>
                     <a href="pages-add-batchadmin.php">
-                        <i class="bi bi-circle"></i> <span>Add </span>
+                        <i class="bi bi-circle"></i> <span>Add Representer </span>
                     </a>
                 </li>
                 <li>
                     <a href="manage-batchadmins.php">
-                        <i class="bi bi-circle"></i> <span>Manage </span>
+                        <i class="bi bi-circle"></i> <span>Manage Representers </span>
                     </a>
                 </li>
             </ul>

@@ -107,6 +107,11 @@ date_default_timezone_set('Asia/Colombo');
                                          <div class="col-12">
                                           <p class="small mb-0" style="font-size:14px;">Don't have account? <a href="pages-signup.php">Create an account</a></p>
                                         </div>
+
+                                        <div class="col-12">
+                                          <p class="small mb-0" style="font-size:14px;">Are you Lecturer? <a href="lectures/pages-signup.php">Create an account</a></p>
+                                        </div>
+
                                         <div class="col-12">
                                          <p>Don't have an account? <a href="guest_view.php?semester=Semester+I&subject=" class="btn btn-outline-primary btn-sm">Continue as Guest</a></p>
                                         </div>

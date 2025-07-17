@@ -13,10 +13,10 @@ if (!isset($_SESSION['login_attempts'])) {
     $_SESSION['last_attempt_time'] = time();
 }
 
-// Lockout durations (seconds)
+// Lockout durations (in seconds)
 $lockout_durations = [5 * 60, 10 * 60, 20 * 60, 60 * 60];
 
-// Check lockout
+// Check for lockout
 if ($_SESSION['login_attempts'] >= 3) {
     $stage = $_SESSION['lockout_stage'];
     $timeout = $lockout_durations[$stage] ?? end($lockout_durations);
@@ -35,8 +35,10 @@ if ($_SESSION['login_attempts'] >= 3) {
 if (isset($_POST['submit'])) {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
-    $tables = ['sadmins', 'admins', 'students'];
     $current_time = date("Y-m-d H:i:s");
+
+    // Tables to check
+    $tables = ['sadmins', 'admins', 'students', 'lectures'];
 
     foreach ($tables as $table) {
         $sql = "SELECT * FROM $table WHERE email = ?";
@@ -47,9 +49,9 @@ if (isset($_POST['submit'])) {
             $user = $result->fetch_assoc();
 
             if ($user && password_verify($password, $user['password'])) {
-                // Check approval
-                if ($user['status'] != 'approved') {
-                    $_SESSION['error_message'] = "Your $table account is not approved yet.";
+                // Check account status
+                if ($user['status'] !== 'approved') {
+                    $_SESSION['error_message'] = "Your account is currently '{$user['status']}'. Please contact support.";
                     header("Location: index.php");
                     exit();
                 }
@@ -58,7 +60,7 @@ if (isset($_POST['submit'])) {
                 $_SESSION['login_attempts'] = 0;
                 $_SESSION['lockout_stage'] = 0;
 
-                // Role-based login
+                // Role-based session setup and redirect
                 if ($table === 'sadmins') {
                     $_SESSION['sadmin_id'] = $user['id'];
                     $_SESSION['success_message'] = "Welcome Super Admin!";
@@ -68,14 +70,19 @@ if (isset($_POST['submit'])) {
                     $_SESSION['admin_id'] = $user['id'];
                     $_SESSION['success_message'] = "Welcome Admin!";
                     $redirect = "admin/user-profile.php";
-                    
+
                 } elseif ($table === 'students') {
                     $_SESSION['student_id'] = $user['id'];
                     $_SESSION['success_message'] = "Welcome Student!";
                     $redirect = "user-profile.php";
+
+                } elseif ($table === 'lectures') {
+                    $_SESSION['lecture_id'] = $user['id'];
+                    $_SESSION['success_message'] = "Welcome Lecturer!";
+                    $redirect = "lectures/index.php";
                 }
 
-                // Update last login
+                // Update last login timestamp
                 $update = $conn->prepare("UPDATE $table SET last_login = ? WHERE id = ?");
                 $update->bind_param("si", $current_time, $user['id']);
                 $update->execute();

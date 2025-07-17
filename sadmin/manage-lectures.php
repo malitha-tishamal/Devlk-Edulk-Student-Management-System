@@ -20,7 +20,7 @@ $stmt->close();
 
 // Fetch users from the database
 // SQL query to get data
-$sql = "SELECT * FROM sadmins";
+$sql = "SELECT * FROM lectures";
 $result = $conn->query($sql);
 ?>
 
@@ -31,7 +31,7 @@ $result = $conn->query($sql);
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-    <title>Admin Manage - Edulk</title>
+    <title>Lectures Manage - Edulk</title>
 
     <?php include_once("../includes/css-links-inc.php"); ?>
 </head>
@@ -44,12 +44,12 @@ $result = $conn->query($sql);
 
     <main id="main" class="main">
         <div class="pagetitle">
-            <h1>Manage Admins</h1>
+            <h1>Manage Lectures</h1>
             <nav>
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="index.html">Home</a></li>
                     <li class="breadcrumb-item">Pages</li>
-                    <li class="breadcrumb-item active">Manage Admins</li>
+                    <li class="breadcrumb-item active">Manage Lectures</li>
                 </ol>
             </nav>
         </div>
@@ -59,16 +59,16 @@ $result = $conn->query($sql);
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">Admins Management</h5>
-                            <p>Manage Admins here.</p>
+                            <h5 class="card-title">Lectures Management</h5>
+                            <p>Manage Lectures here.</p>
 
                             <!-- Table with user data -->
                             <table class="table datatable">
                                 <thead class="align-middle text-center">
                                     <tr>
                                         <th>ID</th>
-                                        <th>Profile Picture</th>
                                         <th>Name</th>
+                                        <th>Profile Picture</th>
                                         <th>NIC</th>
                                         <th>Email</th>
                                         <th>Mobile</th>
@@ -76,7 +76,7 @@ $result = $conn->query($sql);
                                         <th></th>
                                         <th>Action</th>
                                         <th></th>
-                                         <th>Edit</th>
+                                        <th>Edit</th>
                                     </tr>
                                     <tr>
                                         <th colspan="7" class="text-center"></th> <!-- Empty columns for alignment -->
@@ -91,15 +91,15 @@ $result = $conn->query($sql);
                                         while ($row = $result->fetch_assoc()) {
                                             echo "<tr>";
                                             echo "<td>" . $row['id'] . "</td>";
-                                            echo "<td><img src='" . $row["profile_picture"] . "' alt='Profile' width='50'></td>";
-                                            echo "<td>" . $row['name'] . "</td> ";
+                                            echo " <td><img src='../lectures/" . $row["profile_picture"] . "' alt='Profile' width='50'></td>";
+                                            echo "<td>" . $row['username'] . "</td>";
                                             echo "<td>" . $row['nic'] . "</td>";
                                             echo "<td>" . $row['email'] . "</td>";
                                             echo "<td>" . $row['mobile'] . "</td>";
 
-                                            // Status Column
+                                            // Status Column with Color
                                             echo "<td>";
-                                            $status = strtolower($row['status']);
+                                            $status = strtolower($row['status']); // Convert to lowercase for case insensitivity
 
                                             if ($status === 'active' || $status === 'approved') {
                                                 echo "<span class='btn btn-success btn-sm w-100 text-center'>Approved</span>";
@@ -112,7 +112,7 @@ $result = $conn->query($sql);
                                             }
                                             echo "</td>";
 
-                                            // Action Buttons
+                                            // Action Buttons in their respective columns
                                             echo "<td class='text-center'>
                                                     <button class='btn btn-success btn-sm w-100 approve-btn' data-id='" . $row['id'] . "'>Approve</button>
                                                   </td>";
@@ -122,21 +122,18 @@ $result = $conn->query($sql);
                                             echo "<td class='text-center'>
                                                     <button class='btn btn-danger btn-sm w-100 delete-btn' data-id='" . $row['id'] . "'>Delete</button>
                                                   </td>";
-
                                              // Edit Profile Button
                                             echo "<td class='text-center'>
-                                                    <a href='edit-admin.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm w-100'>Edit</a>
+                                                    <a href='edit-lecture.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm w-100'>Edit</a>
                                                   </td>";
 
-                                           
                                             echo "</tr>";
                                         }
                                     } else {
-                                        echo "<tr><td colspan='10' class='text-center'>No users found.</td></tr>";
+                                        echo "<tr><td colspan='9' class='text-center'>No users found.</td></tr>";
                                     }
                                     ?>
                                 </tbody>
-
 
                             </table>
                             <!-- End Table with user data -->
@@ -162,14 +159,14 @@ $result = $conn->query($sql);
         approveButtons.forEach(button => {
             button.addEventListener('click', function () {
                 const userId = this.getAttribute('data-id');
-                window.location.href = `process-admins.php?approve_id=${userId}`;
+                window.location.href = `process-lectures.php?approve_id=${userId}`;
             });
         });
 
         disableButtons.forEach(button => {
             button.addEventListener('click', function () {
                 const userId = this.getAttribute('data-id');
-                window.location.href = `process-admins.php?disable_id=${userId}`;
+                window.location.href = `process-lectures.php?disable_id=${userId}`;
             });
         });
 
@@ -177,7 +174,7 @@ $result = $conn->query($sql);
             button.addEventListener('click', function () {
                 const userId = this.getAttribute('data-id');
                 if (confirm("Are you sure you want to delete this user?")) {
-                    window.location.href = `process-admins.php?delete_id=${userId}`;
+                    window.location.href = `process-lectures.php?delete_id=${userId}`;
                 }
             });
         });
