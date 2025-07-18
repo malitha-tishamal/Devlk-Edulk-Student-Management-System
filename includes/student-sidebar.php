@@ -26,6 +26,12 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" href="pages-user-drive.php">
+                <i class="bi bi-hdd"></i> <span>My Drive</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" href="logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Log Out</span>

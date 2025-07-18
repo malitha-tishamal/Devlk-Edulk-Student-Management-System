@@ -137,6 +137,18 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" href="pages-sadmin-drive.php">
+                <i class="bi bi-hdd"></i> <span>My Drive</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="pages-meeting-manage.php">
+                <i class="bi bi-people-fill"></i> <span>Meetings</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" href="logout.php">
                 <i class="bi bi-box-arrow-right"></i> <span>Log Out</span>
             </a>
