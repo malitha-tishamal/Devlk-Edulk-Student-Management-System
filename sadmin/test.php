@@ -1,207 +1,214 @@
 <?php
-// manage-files.php
 session_start();
 require_once '../includes/db-conn.php';
 
+// Check admin login
 if (!isset($_SESSION['sadmin_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
-$user_id = $_SESSION['sadmin_id'];
-$sql = "SELECT name, email, nic, mobile, profile_picture FROM sadmins WHERE id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
-$stmt->close();
+$uploadDir = '../uploads/';
+$maxUploadMB = 100; // max 100MB total usage
 
-$semesters = [];
-$semQuery = $conn->query("SELECT DISTINCT semester FROM subjects ORDER BY semester ASC");
-while ($row = $semQuery->fetch_assoc()) {
-    $semesters[] = $row['semester'];
-}
-
-$selectedSemester = isset($_GET['semester']) ? $_GET['semester'] : '';
-$subjects = [];
-
-if ($selectedSemester !== '') {
-    $subjectQuery = $conn->prepare("SELECT id, name FROM subjects WHERE semester = ? ORDER BY name ASC");
-    $subjectQuery->bind_param("s", $selectedSemester);
-    $subjectQuery->execute();
-    $resultSubjects = $subjectQuery->get_result();
-    while ($row = $resultSubjects->fetch_assoc()) {
-        $subjects[] = $row;
+// Function to get total used space in uploads directory (MB)
+function getUsedSpaceMB($dir) {
+    $size = 0;
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir)) as $file) {
+        if ($file->isFile()) $size += $file->getSize();
     }
-    $subjectQuery->close();
+    return $size / (1024 * 1024);
 }
+
+// Function for file icon (thumbnail) based on extension
+function getFileIconHTML($filename) {
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    switch ($ext) {
+        case 'pdf': return '<i class="fa-solid fa-file-pdf" style="color:#d9534f; font-size: 32px;"></i>';
+        case 'doc': case 'docx': return '<i class="fa-solid fa-file-word" style="color:#2a64bc; font-size: 32px;"></i>';
+        case 'xls': case 'xlsx': return '<i class="fa-solid fa-file-excel" style="color:#218838; font-size: 32px;"></i>';
+        case 'ppt': case 'pptx': return '<i class="fa-solid fa-file-powerpoint" style="color:#f0ad4e; font-size: 32px;"></i>';
+        case 'jpg': case 'jpeg': case 'png': case 'gif': 
+            return '<img src="../uploads/' . rawurlencode($filename) . '" alt="img" style="width:32px; height:32px; object-fit:contain; border-radius:4px;">';
+        default: return '<i class="fa-solid fa-file" style="color:#6c757d; font-size: 32px;"></i>';
+    }
+}
+
+// Handle file upload via AJAX POST (upload-file.php)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
+    header('Content-Type: application/json');
+
+    $file = $_FILES['file'];
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'message' => 'Upload error']);
+        exit;
+    }
+
+    // Check file size limit per file (100MB max)
+    if ($file['size'] > 100 * 1024 * 1024) {
+        echo json_encode(['success' => false, 'message' => 'File too large. Max 100MB per file.']);
+        exit;
+    }
+
+    // Check total used + new file size <= maxUploadMB
+    $used = getUsedSpaceMB($uploadDir);
+    if (($used + ($file['size'] / (1024 * 1024))) > $maxUploadMB) {
+        echo json_encode(['success' => false, 'message' => 'Upload exceeds total storage limit of 100MB']);
+        exit;
+    }
+
+    // Generate unique file name to avoid conflicts
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $safeName = uniqid('file_', true) . '.' . $ext;
+
+    $dest = $uploadDir . $safeName;
+
+    if (move_uploaded_file($file['tmp_name'], $dest)) {
+        // Optionally, insert file record into DB here
+
+        echo json_encode(['success' => true, 'filename' => $safeName]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file']);
+    }
+    exit;
+}
+
+// Get list of uploaded files
+$uploadedFiles = array_filter(scandir($uploadDir), function($f) use ($uploadDir) {
+    return is_file($uploadDir . $f) && $f !== '.' && $f !== '..';
+});
+
+$usedMB = getUsedSpaceMB($uploadDir);
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Manage Active Students - EduWide</title>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <title>Admin File Upload - Drive Usage</title>
     <?php include_once("../includes/css-links-inc.php"); ?>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        #progressContainer { width: 100%; background: #e9ecef; border-radius: 5px; overflow: hidden; margin-top: 10px; display:none; }
+        #progressBar { height: 25px; width: 0%; background: #0d6efd; text-align: center; color: white; line-height: 25px; font-weight: bold; transition: width 0.3s; }
+        .file-thumb { display: inline-block; margin: 10px; text-align: center; cursor: pointer; }
+        .file-thumb span { display: block; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+    </style>
 </head>
 <body>
-<?php include_once("../includes/header.php") ?>
-<?php include_once("../includes/sadmin-sidebar.php") ?>
-<main id="main" class="main">
-    <div class="pagetitle">
-        <h1>Manage Resources</h1>
-        <nav>
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="index.php">Home</a></li>
-                <li class="breadcrumb-item active">Manage Resources</li>
-            </ol>
-        </nav>
-    </div>
+<h1>Admin File Upload</h1>
 
-    <section class="section">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
+<p>Drive usage: <strong><?= number_format($usedMB, 2) ?> MB</strong> / <?= $maxUploadMB ?> MB</p>
 
-                        <h5 class="card-title">Select Semester</h5>
-                        <form method="GET" class="mb-3">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <select name="semester" class="form-select" onchange="this.form.submit()">
-                                        <option value="">-- Select Semester --</option>
-                                        <?php foreach ($semesters as $sem): ?>
-                                            <option value="<?= $sem ?>" <?= $sem == $selectedSemester ? 'selected' : '' ?>>
-                                                Semester <?= htmlspecialchars($sem) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                        </form>
+<form id="uploadForm" enctype="multipart/form-data">
+    <label for="fileInput">Select file to upload (Max 100MB per file):</label><br>
+    <input type="file" id="fileInput" name="file" required>
+    <button type="submit">Upload</button>
+</form>
 
-                        <?php if (isset($_GET['upload'])): ?>
-                            <div class="alert alert-<?= $_GET['upload'] === 'success' ? 'success' : 'danger' ?>" role="alert">
-                                <?= htmlspecialchars($_GET['msg'] ?? '') ?>
-                            </div>
-                        <?php endif; ?>
+<div id="progressContainer">
+    <div id="progressBar">0%</div>
+</div>
 
-                        <?php if ($selectedSemester !== ''): ?>
-                            <h5 class="card-title">File Upload</h5>
-                            <form action="upload-file.php" method="POST" enctype="multipart/form-data" class="mb-4" id="multiFileForm">
-                                <input type="hidden" name="semester" value="<?= htmlspecialchars($selectedSemester) ?>">
-                                <div id="upload-sections">
-                                    <div class="upload-section row g-3 mb-3">
-                                        <div class="col-md-3">
-                                            <input type="text" name="title[]" class="form-control" placeholder="File Title" required>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <select name="subject_id[]" class="form-select" required>
-                                                <option value="">Select Subject</option>
-                                                <?php foreach ($subjects as $subject): ?>
-                                                    <option value="<?= $subject['id'] ?>"><?= htmlspecialchars($subject['name']) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <select name="category[]" class="form-select" required>
-                                                <option value="">Category</option>
-                                                <option value="Pass Papers">Pass Papers</option>
-                                                <option value="Notes">Notes</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <input type="file" name="file[]" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-1 d-flex align-items-center">
-                                            <button type="button" class="btn btn-danger btn-sm remove-section">X</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <button type="button" class="btn btn-secondary btn-sm" id="addSectionBtn">+ Add More</button>
-                                    <button type="submit" class="btn btn-primary float-end">Upload All Files</button>
-                                </div>
-                            </form>
-
-                            <script>
-                                document.getElementById("addSectionBtn").addEventListener("click", function () {
-                                    const section = document.querySelector(".upload-section");
-                                    const clone = section.cloneNode(true);
-
-                                    clone.querySelectorAll("input, select").forEach(el => el.value = "");
-                                    document.getElementById("upload-sections").appendChild(clone);
-                                });
-
-                                document.addEventListener("click", function (e) {
-                                    if (e.target.classList.contains("remove-section")) {
-                                        const total = document.querySelectorAll(".upload-section").length;
-                                        if (total > 1) {
-                                            e.target.closest(".upload-section").remove();
-                                        }
-                                    }
-                                });
-                            </script>
-
-                            <h5 class="card-title mt-4">Uploaded Files</h5>
-                            <?php
-                            $subjectGroupQuery = $conn->prepare("SELECT DISTINCT s.id, s.name FROM tuition_files tf JOIN subjects s ON tf.subject_id = s.id WHERE s.semester = ? ORDER BY s.name ASC");
-                            $subjectGroupQuery->bind_param("s", $selectedSemester);
-                            $subjectGroupQuery->execute();
-                            $subjectResult = $subjectGroupQuery->get_result();
-                            while ($subject = $subjectResult->fetch_assoc()):
-                            ?>
-                                <h5 class="mt-4 text-primary"><?= htmlspecialchars($subject['name']) ?></h5>
-                                <table class="table table-bordered mb-4">
-                                    <thead>
-                                        <tr>
-                                            <th>Title</th>
-                                            <th>Category</th>
-                                            <th>File</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $fileQuery = $conn->query("SELECT * FROM tuition_files WHERE subject_id = " . intval($subject['id']) . " ORDER BY uploaded_at DESC");
-                                        while ($row = $fileQuery->fetch_assoc()):
-                                        ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row['title']) ?></td>
-                                            <td><?= htmlspecialchars($row['category']) ?></td>
-                                            <td><a href="../uploads/<?= $row['filename'] ?>" target="_blank">View</a></td>
-                                            <td><span class="badge bg-<?= $row['status'] === 'active' ? 'success' : 'secondary' ?>">
-                                                <?= ucfirst($row['status']) ?>
-                                            </span></td>
-                                            <td>
-                                                <?php if ($row['status'] !== 'active'): ?>
-                                                    <a href="change-file-status.php?id=<?= $row['id'] ?>&status=active&semester=<?= urlencode($selectedSemester) ?>" class="btn btn-sm btn-success">Activate</a>
-                                                <?php endif; ?>
-                                                <?php if ($row['status'] !== 'inactive'): ?>
-                                                    <a href="change-file-status.php?id=<?= $row['id'] ?>&status=inactive&semester=<?= urlencode($selectedSemester) ?>" class="btn btn-sm btn-secondary">Disable</a>
-                                                <?php endif; ?>
-                                                <a href="delete-file.php?id=<?= $row['id'] ?>&semester=<?= urlencode($selectedSemester) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this file?')">Delete</a>
-                                            </td>
-                                        </tr>
-                                        <?php endwhile; ?>
-                                    </tbody>
-                                </table>
-                            <?php endwhile; $subjectGroupQuery->close(); ?>
-                        <?php endif; ?>
-
-                    </div>
-                </div>
-            </div>
+<h2>Uploaded Files</h2>
+<div id="filesContainer">
+    <?php foreach ($uploadedFiles as $file): ?>
+        <div class="file-thumb" title="<?= htmlspecialchars($file) ?>" onclick="window.open('../uploads/<?= rawurlencode($file) ?>', '_blank')">
+            <?= getFileIconHTML($file) ?>
+            <span><?= htmlspecialchars($file) ?></span>
         </div>
-    </section>
-</main>
-<?php include_once("../includes/footer.php") ?>
-<a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-<?php include_once("../includes/js-links-inc.php") ?>
+    <?php endforeach; ?>
+</div>
+
+<script>
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const filesContainer = document.getElementById('filesContainer');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!fileInput.files.length) return alert('Please select a file');
+
+        const file = fileInput.files[0];
+        if (file.size > 100 * 1024 * 1024) {
+            alert('File too large. Max 100MB allowed.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressBar.textContent = percent + '%';
+                progressContainer.style.display = 'block';
+            }
+        };
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const resp = JSON.parse(xhr.responseText);
+                if (resp.success) {
+                    alert('Upload completed: ' + resp.filename);
+                    // Add new file thumbnail dynamically
+                    const div = document.createElement('div');
+                    div.className = 'file-thumb';
+                    div.title = resp.filename;
+                    div.style.cursor = 'pointer';
+                    div.onclick = () => window.open('../uploads/' + encodeURIComponent(resp.filename), '_blank');
+
+                    // Decide icon HTML for file extension
+                    function getFileIconHTML(filename) {
+                        const ext = filename.split('.').pop().toLowerCase();
+                        switch (ext) {
+                            case 'pdf': return '<i class="fa-solid fa-file-pdf" style="color:#d9534f; font-size: 32px;"></i>';
+                            case 'doc':
+                            case 'docx': return '<i class="fa-solid fa-file-word" style="color:#2a64bc; font-size: 32px;"></i>';
+                            case 'xls':
+                            case 'xlsx': return '<i class="fa-solid fa-file-excel" style="color:#218838; font-size: 32px;"></i>';
+                            case 'ppt':
+                            case 'pptx': return '<i class="fa-solid fa-file-powerpoint" style="color:#f0ad4e; font-size: 32px;"></i>';
+                            case 'jpg':
+                            case 'jpeg':
+                            case 'png':
+                            case 'gif': return '<img src="../uploads/' + encodeURIComponent(filename) + '" alt="img" style="width:32px; height:32px; object-fit:contain; border-radius:4px;">';
+                            default: return '<i class="fa-solid fa-file" style="color:#6c757d; font-size: 32px;"></i>';
+                        }
+                    }
+
+                    div.innerHTML = getFileIconHTML(resp.filename) + '<span>' + resp.filename + '</span>';
+                    filesContainer.appendChild(div);
+
+                    // Reset progress bar
+                    progressBar.style.width = '0%';
+                    progressBar.textContent = '0%';
+                    progressContainer.style.display = 'none';
+
+                    form.reset();
+                } else {
+                    alert('Upload failed: ' + resp.message);
+                }
+            } else {
+                alert('Upload error. Status: ' + xhr.status);
+            }
+        };
+
+        xhr.onerror = function() {
+            alert('Upload failed due to a network error.');
+        };
+
+        xhr.open('POST', '<?= basename(__FILE__) ?>', true);
+        xhr.send(formData);
+    });
+</script>
+
 </body>
 </html>
-<?php $conn->close(); ?>

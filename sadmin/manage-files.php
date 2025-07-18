@@ -22,8 +22,8 @@ while ($row = $semQuery->fetch_assoc()) {
     $semesters[] = $row['semester'];
 }
 
-$selectedSemester = isset($_GET['semester']) ? $_GET['semester'] : '';
-$selectedSubjectId = isset($_GET['subject']) ? $_GET['subject'] : '';
+$selectedSemester = $_GET['semester'] ?? '';
+$selectedSubjectId = $_GET['subject'] ?? '';
 
 $subjects = [];
 if ($selectedSemester !== '') {
@@ -36,18 +36,48 @@ if ($selectedSemester !== '') {
     }
     $subjectQuery->close();
 }
+
+// Function for colored file icons by extension
+function getFileIconColored($ext) {
+    $ext = strtolower($ext);
+    switch ($ext) {
+        case 'pdf':
+            return '<i class="fa-solid fa-file-pdf" style="color:#d9534f;"></i>'; // red
+        case 'doc':
+        case 'docx':
+            return '<i class="fa-solid fa-file-word" style="color:#2a64bc;"></i>'; // blue
+        case 'xls':
+        case 'xlsx':
+            return '<i class="fa-solid fa-file-excel" style="color:#218838;"></i>'; // green
+        case 'ppt':
+        case 'pptx':
+            return '<i class="fa-solid fa-file-powerpoint" style="color:#f0ad4e;"></i>'; // orange
+        default:
+            return '<i class="fa-solid fa-file" style="color:#6c757d;"></i>'; // gray
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Manage Resources - EduWide</title>
     <?php include_once("../includes/css-links-inc.php"); ?>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        .week-subheading {
+            font-weight: 600;
+            color: #1a73e8;
+            margin-top: 20px;
+            margin-left: 15px;
+        }
+    </style>
 </head>
 <body>
 <?php include_once("../includes/header.php") ?>
 <?php include_once("../includes/sadmin-sidebar.php") ?>
+
 <main id="main" class="main">
     <div class="pagetitle">
         <h1>Manage Resources</h1>
@@ -72,36 +102,30 @@ if ($selectedSemester !== '') {
                                     <select name="semester" class="form-select" onchange="this.form.submit()">
                                         <option value="">-- Select Semester --</option>
                                         <?php foreach ($semesters as $sem): ?>
-                                            <option value="<?= $sem ?>" <?= $sem == $selectedSemester ? 'selected' : '' ?>>
+                                            <option value="<?= htmlspecialchars($sem) ?>" <?= $sem == $selectedSemester ? 'selected' : '' ?>>
                                                 Semester <?= htmlspecialchars($sem) ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
                                 <?php if (!empty($subjects)): ?>
-                                <div class="col-md-4">
-                                    <select name="subject" class="form-select" onchange="this.form.submit()">
-                                        <option value="">-- All Subjects --</option>
-                                        <?php foreach ($subjects as $subject): ?>
-                                            <option value="<?= $subject['id'] ?>" <?= $selectedSubjectId == $subject['id'] ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($subject['name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
+                                    <div class="col-md-4">
+                                        <select name="subject" class="form-select" onchange="this.form.submit()">
+                                            <option value="">-- All Subjects --</option>
+                                            <?php foreach ($subjects as $subject): ?>
+                                                <option value="<?= htmlspecialchars($subject['id']) ?>" <?= $selectedSubjectId == $subject['id'] ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($subject['name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                         </form>
 
-                        <?php if (isset($_GET['upload'])): ?>
-                            <div class="alert alert-<?= $_GET['upload'] === 'success' ? 'success' : 'danger' ?>" role="alert">
-                                <?= htmlspecialchars($_GET['msg'] ?? '') ?>
-                            </div>
-                        <?php endif; ?>
-
+                        <h5 class="card-title">File Upload</h5>
                         <?php if ($selectedSemester !== ''): ?>
-                            <h5 class="card-title">File Upload</h5>
-                            <form action="upload-file.php" method="POST" enctype="multipart/form-data" class="mb-4" id="multiFileForm">
+                            <form id="multiFileForm" class="mb-4" enctype="multipart/form-data">
                                 <input type="hidden" name="semester" value="<?= htmlspecialchars($selectedSemester) ?>">
                                 <div id="upload-sections">
                                     <div class="upload-section row g-3 mb-3">
@@ -112,7 +136,7 @@ if ($selectedSemester !== '') {
                                             <select name="subject_id[]" class="form-select" required>
                                                 <option value="">Select Subject</option>
                                                 <?php foreach ($subjects as $subject): ?>
-                                                    <option value="<?= $subject['id'] ?>"><?= htmlspecialchars($subject['name']) ?></option>
+                                                    <option value="<?= htmlspecialchars($subject['id']) ?>"><?= htmlspecialchars($subject['name']) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -136,6 +160,11 @@ if ($selectedSemester !== '') {
                                     <button type="button" class="btn btn-secondary btn-sm" id="addSectionBtn">+ Add More</button>
                                     <button type="submit" class="btn btn-primary float-end">Upload All Files</button>
                                 </div>
+                                <div class="progress mt-3" style="height: 25px; display: none;" id="uploadProgressBar">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                         style="width: 0%;" id="progressBarText">0%
+                                    </div>
+                                </div>
                             </form>
 
                             <script>
@@ -154,10 +183,53 @@ if ($selectedSemester !== '') {
                                         }
                                     }
                                 });
+
+                                document.getElementById("multiFileForm").addEventListener("submit", function (e) {
+                                    e.preventDefault();
+
+                                    const form = e.target;
+                                    const formData = new FormData(form);
+                                    const xhr = new XMLHttpRequest();
+
+                                    const progressContainer = document.getElementById("uploadProgressBar");
+                                    const progressBar = document.getElementById("progressBarText");
+
+                                    progressContainer.style.display = "block";
+                                    progressBar.style.width = "0%";
+                                    progressBar.innerText = "0%";
+
+                                    xhr.upload.addEventListener("progress", function (e) {
+                                        if (e.lengthComputable) {
+                                            const percent = Math.round((e.loaded / e.total) * 100);
+                                            progressBar.style.width = percent + "%";
+                                            progressBar.innerText = percent + "%";
+                                        }
+                                    });
+
+                                    xhr.addEventListener("load", function () {
+                                        if (xhr.status === 200) {
+                                            progressBar.classList.remove("bg-danger");
+                                            progressBar.classList.add("bg-success");
+                                            progressBar.innerText = "Upload Complete";
+                                            setTimeout(() => {
+                                                window.location.reload();
+                                            }, 1000);
+                                        } else {
+                                            progressBar.classList.remove("bg-success");
+                                            progressBar.classList.add("bg-danger");
+                                            progressBar.innerText = "Upload Failed";
+                                        }
+                                    });
+
+                                    xhr.open("POST", "upload-file.php");
+                                    xhr.send(formData);
+                                });
                             </script>
 
                             <h5 class="card-title mt-4">Uploaded Files</h5>
+
                             <?php
+                            // Fetch subjects for this semester
                             $subjectGroupQuery = $conn->prepare("
                                 SELECT DISTINCT s.id, s.name 
                                 FROM tuition_files tf 
@@ -170,52 +242,122 @@ if ($selectedSemester !== '') {
                             $subjectResult = $subjectGroupQuery->get_result();
 
                             while ($subject = $subjectResult->fetch_assoc()):
+                                // If a specific subject is selected, skip others
                                 if ($selectedSubjectId && $selectedSubjectId != $subject['id']) {
                                     continue;
                                 }
-                            ?>
+                                ?>
                                 <h5 class="mt-4 text-primary"><?= htmlspecialchars($subject['name']) ?></h5>
-                                <table class="table table-bordered mb-4">
-                                    <thead>
+
+                                <?php
+                                // Fetch files for this subject, grouped by Notes Weeks and Others
+                                $stmtFiles = $conn->prepare("SELECT id, title, category, filename, status FROM tuition_files WHERE subject_id = ? ORDER BY uploaded_at DESC");
+                                $notesByWeek = [];
+                                $otherFiles = [];
+
+                                if ($stmtFiles) {
+                                    $stmtFiles->bind_param("i", $subject['id']);
+                                    $stmtFiles->execute();
+                                    $resultFiles = $stmtFiles->get_result();
+
+                                    while ($file = $resultFiles->fetch_assoc()) {
+                                        if (strtolower($file['category']) === 'notes' && preg_match('/^(Week\s*\d+)/i', $file['title'], $matches)) {
+                                            $weekKey = $matches[1]; // e.g. "Week 1"
+                                            $notesByWeek[$weekKey][] = $file;
+                                        } else {
+                                            $otherFiles[] = $file;
+                                        }
+                                    }
+                                    $stmtFiles->close();
+                                }
+
+                                // Sort weeks naturally
+                                if (!empty($notesByWeek)) {
+                                    ksort($notesByWeek, SORT_NATURAL | SORT_FLAG_CASE);
+                                }
+
+                                // Display Notes grouped by week
+                                foreach ($notesByWeek as $week => $files):
+                                    ?>
+                                    <h6 class="week-subheading"><?= htmlspecialchars($week) ?></h6>
+                                    <table class="table table-bordered mb-4">
+                                        <thead>
                                         <tr>
                                             <th>Title</th>
                                             <th>Category</th>
+                                            <th>Extension</th>
                                             <th>File</th>
                                             <th>Status</th>
                                             <th>Action</th>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $fileQuery = $conn->query("
-                                            SELECT * FROM tuition_files 
-                                            WHERE subject_id = " . intval($subject['id']) . " 
-                                            ORDER BY 
-                                                CASE category WHEN 'Notes' THEN 0 ELSE 1 END, 
-                                                uploaded_at DESC
-                                        ");
-                                        while ($row = $fileQuery->fetch_assoc()):
-                                        ?>
+                                        </thead>
+                                        <tbody>
+                                        <?php foreach ($files as $f): 
+                                            $ext = pathinfo($f['filename'], PATHINFO_EXTENSION);
+                                            ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($f['title']) ?></td>
+                                                <td><?= htmlspecialchars($f['category']) ?></td>
+                                                <td><?= getFileIconColored($ext) . ' ' . strtoupper(htmlspecialchars($ext)) ?></td>
+                                                <td><a href="../uploads/<?= rawurlencode($f['filename']) ?>" target="_blank" rel="noopener">View</a></td>
+                                                <td><span class="badge bg-<?= $f['status'] === 'active' ? 'success' : 'secondary' ?>">
+                                                        <?= ucfirst(htmlspecialchars($f['status'])) ?>
+                                                    </span></td>
+                                                <td>
+                                                    <?php if ($f['status'] !== 'active'): ?>
+                                                        <a href="change-file-status.php?id=<?= $f['id'] ?>&status=active&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-success">Activate</a>
+                                                    <?php endif; ?>
+                                                    <?php if ($f['status'] !== 'inactive'): ?>
+                                                        <a href="change-file-status.php?id=<?= $f['id'] ?>&status=inactive&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-secondary">Disable</a>
+                                                    <?php endif; ?>
+                                                    <a href="delete-file.php?id=<?= $f['id'] ?>&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this file?')">Delete</a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                <?php endforeach; ?>
+
+                                <?php if (!empty($otherFiles)): ?>
+                                    <h6 class="week-subheading">Other Files</h6>
+                                    <table class="table table-bordered mb-4">
+                                        <thead>
                                         <tr>
-                                            <td><?= htmlspecialchars($row['title']) ?></td>
-                                            <td><?= htmlspecialchars($row['category']) ?></td>
-                                            <td><a href="../uploads/<?= $row['filename'] ?>" target="_blank">View</a></td>
-                                            <td><span class="badge bg-<?= $row['status'] === 'active' ? 'success' : 'secondary' ?>">
-                                                <?= ucfirst($row['status']) ?>
-                                            </span></td>
-                                            <td>
-                                                <?php if ($row['status'] !== 'active'): ?>
-                                                    <a href="change-file-status.php?id=<?= $row['id'] ?>&status=active&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-success">Activate</a>
-                                                <?php endif; ?>
-                                                <?php if ($row['status'] !== 'inactive'): ?>
-                                                    <a href="change-file-status.php?id=<?= $row['id'] ?>&status=inactive&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-secondary">Disable</a>
-                                                <?php endif; ?>
-                                                <a href="delete-file.php?id=<?= $row['id'] ?>&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this file?')">Delete</a>
-                                            </td>
+                                            <th>Title</th>
+                                            <th>Category</th>
+                                            <th>Extension</th>
+                                            <th>File</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
                                         </tr>
-                                        <?php endwhile; ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                        <?php foreach ($otherFiles as $f):
+                                            $ext = pathinfo($f['filename'], PATHINFO_EXTENSION);
+                                            ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($f['title']) ?></td>
+                                                <td><?= htmlspecialchars($f['category']) ?></td>
+                                                <td><?= getFileIconColored($ext) . ' ' . strtoupper(htmlspecialchars($ext)) ?></td>
+                                                <td><a href="../uploads/<?= rawurlencode($f['filename']) ?>" target="_blank" rel="noopener">View</a></td>
+                                                <td><span class="badge bg-<?= $f['status'] === 'active' ? 'success' : 'secondary' ?>">
+                                                        <?= ucfirst(htmlspecialchars($f['status'])) ?>
+                                                    </span></td>
+                                                <td>
+                                                    <?php if ($f['status'] !== 'active'): ?>
+                                                        <a href="change-file-status.php?id=<?= $f['id'] ?>&status=active&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-success">Activate</a>
+                                                    <?php endif; ?>
+                                                    <?php if ($f['status'] !== 'inactive'): ?>
+                                                        <a href="change-file-status.php?id=<?= $f['id'] ?>&status=inactive&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-secondary">Disable</a>
+                                                    <?php endif; ?>
+                                                    <a href="delete-file.php?id=<?= $f['id'] ?>&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this file?')">Delete</a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                <?php endif; ?>
+
                             <?php endwhile; $subjectGroupQuery->close(); ?>
                         <?php endif; ?>
 
@@ -225,6 +367,7 @@ if ($selectedSemester !== '') {
         </div>
     </section>
 </main>
+
 <?php include_once("../includes/footer.php") ?>
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 <?php include_once("../includes/js-links-inc.php") ?>

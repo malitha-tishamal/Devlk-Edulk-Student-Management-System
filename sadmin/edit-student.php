@@ -2,7 +2,6 @@
 session_start();
 require_once '../includes/db-conn.php';
 
-// Redirect if not logged in
 if (!isset($_SESSION['sadmin_id'])) {
     header("Location: ../index.php");
     exit();
@@ -16,17 +15,6 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $student_id = $_GET['id'];
 
-// Fetch admin details
-$user_id = $_SESSION['sadmin_id'];
-$sql = "SELECT name, email, nic,mobile,profile_picture FROM sadmins WHERE id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
-$stmt->close();
-
-// Fetch student details
 $sql = "SELECT * FROM students WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $student_id);
@@ -42,28 +30,31 @@ if (!$student) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['name']);
+    $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $nic = trim($_POST['nic']);
     $mobile = trim($_POST['mobile']);
-    $study_year = trim($_POST['study_year']);
+    $mobile2 = trim($_POST['mobile2']);
+    $gender = $_POST['gender'];
+    $address = trim($_POST['address']);
+    $nowstatus = trim($_POST['nowstatus']);
+    $status = $_POST['status'];
 
-    if (empty($name) || empty($email) || empty($nic) || empty($mobile) || empty($study_year)) {
-        $_SESSION['error_message'] = "All fields are required!";
-    } else {
-        $sql = "UPDATE students SET name=?, email=?, nic=?, mobile=?, study_year=? WHERE id=?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssi", $name, $email, $nic, $mobile, $study_year, $student_id);
+    if ($name && $email && $nic && $mobile && $gender && $address && $status) {
+        $updateSql = "UPDATE students SET name=?, email=?, nic=?, mobile=?, mobile2=?, gender=?, address=?, nowstatus=?, status=? WHERE id=?";
+        $stmt = $conn->prepare($updateSql);
+        $stmt->bind_param("sssssssssi", $name, $email, $nic, $mobile, $mobile2, $gender, $address, $nowstatus, $status, $student_id);
 
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Student details updated successfully!";
+            $_SESSION['success_message'] = "Student updated successfully.";
             header("Location: manage-students.php");
             exit();
         } else {
-            $_SESSION['error_message'] = "Error updating student details.";
+            $_SESSION['error_message'] = "Failed to update student.";
         }
-
         $stmt->close();
+    } else {
+        $_SESSION['error_message'] = "All fields are required.";
     }
 }
 ?>
@@ -71,65 +62,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
     <title>Edit Student - Edulk</title>
     <?php include_once("../includes/css-links-inc.php"); ?>
 </head>
 <body>
-    <?php include_once("../includes/header.php"); ?>
-    <?php include_once("../includes/sadmin-sidebar.php"); ?>
+<?php include_once("../includes/header.php"); ?>
+<?php include_once("../includes/sadmin-sidebar.php"); ?>
 
-    <main id="main" class="main">
-        <div class="pagetitle">
-            <h1>Edit Student</h1>
-        </div>
-        <section class="section">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Edit Student Details</h5>
-                            <?php if (isset($_SESSION['error_message'])): ?>
-                                <div class='alert alert-danger'><?= $_SESSION['error_message']; ?></div>
-                                <?php unset($_SESSION['error_message']); ?>
-                            <?php endif; ?>
-                            <?php if (isset($_SESSION['success_message'])): ?>
-                                <div class='alert alert-success'><?= $_SESSION['success_message']; ?></div>
-                                <?php unset($_SESSION['success_message']); ?>
-                            <?php endif; ?>
-                            <form method="POST" action="">
-                                <div class="mb-3">
-                                    <label for="username" class="form-label">Username</label>
-                                    <input type="text" class="form-control" id="username" name="username" value="<?= htmlspecialchars($student['name']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" value="<?= htmlspecialchars($student['email']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="nic" class="form-label">NIC</label>
-                                    <input type="text" class="form-control" id="nic" name="nic" value="<?= htmlspecialchars($student['nic']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="mobile" class="form-label">Mobile</label>
-                                    <input type="text" class="form-control" id="mobile" name="mobile" value="<?= htmlspecialchars($student['mobile']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="study_year" class="form-label">Study Year</label>
-                                    <input type="text" class="form-control" id="study_year" name="study_year" value="<?= htmlspecialchars($student['study_year']); ?>" required>
-                                </div>
-                                <button type="submit" class="btn btn-success">Update</button>
-                                <a href="manage-students.php" class="btn btn-danger">Cancel</a>
-                            </form>
-                        </div>
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h1>Edit Student</h1>
+    </div>
+
+    <section class="section">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Update Student Details</h5>
+
+                <?php if (isset($_SESSION['error_message'])): ?>
+                    <div class="alert alert-danger"><?= $_SESSION['error_message']; unset($_SESSION['error_message']); ?></div>
+                <?php endif; ?>
+
+                <form method="POST" action="">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-control" required value="<?= htmlspecialchars($student['name']) ?>">
                     </div>
-                </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required value="<?= htmlspecialchars($student['email']) ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">NIC</label>
+                        <input type="text" name="nic" class="form-control" required value="<?= htmlspecialchars($student['nic']) ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mobile</label>
+                        <input type="text" name="mobile" class="form-control" required value="<?= htmlspecialchars($student['mobile']) ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Home / Other Number</label>
+                        <input type="text" name="mobile2" class="form-control" value="<?= htmlspecialchars($student['mobile2']) ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Gender</label>
+                        <select name="gender" class="form-select" required>
+                            <option value="Male" <?= ($student['gender'] == 'Male') ? 'selected' : '' ?>>Male</option>
+                            <option value="Female" <?= ($student['gender'] == 'Female') ? 'selected' : '' ?>>Female</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" required><?= htmlspecialchars($student['address']) ?></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Now Status</label>
+                        <input type="text" name="nowstatus" class="form-control" value="<?= htmlspecialchars($student['nowstatus']) ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Account Status</label>
+                        <select name="status" class="form-select" required>
+                            <option value="active" <?= ($student['status'] == 'active') ? 'selected' : '' ?>>Active</option>
+                            <option value="pending" <?= ($student['status'] == 'pending') ? 'selected' : '' ?>>Pending</option>
+                            <option value="disabled" <?= ($student['status'] == 'disabled') ? 'selected' : '' ?>>Disabled</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Update</button>
+                    <a href="manage-students.php" class="btn btn-secondary">Cancel</a>
+                </form>
             </div>
-        </section>
-    </main>
-    <?php include_once("../includes/footer.php"); ?>
-    <?php include_once("../includes/js-links-inc.php"); ?>
+        </div>
+    </section>
+</main>
+
+<?php include_once("../includes/footer.php"); ?>
+<?php include_once("../includes/js-links-inc.php"); ?>
 </body>
 </html>
 
