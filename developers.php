@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-    <title>Developer Team - MediQ</title>
+    <title>Developer - Edulk</title>
     <meta content="" name="description">
     <meta content="" name="keywords">
 
@@ -36,7 +36,7 @@
                     <h4 class="fw-bold">Malitha Tishmal</h4>
                     <p>Full Stack Developer</p>
                     <div class="team-icons">
-                        <a href="https://malitha-tishamal.github.io/blog" target="_blank"><i class="bi bi-globe"></i></a>
+                        <a href="https://malithatishamal.42web.io/?i=1#about" target="_blank"><i class="bi bi-globe"></i></a>
                         <a href="https://github.com/malitha-tishamal" target="_blank"><i class="bi bi-github"></i></a>
                         <a href="https://www.linkedin.com/in/malitha-tishamal" target="_blank"><i class="bi bi-linkedin"></i></a>
                         <a href="https://www.facebook.com/malitha.tishamal" target="_blank"><i class="bi bi-facebook"></i></a>

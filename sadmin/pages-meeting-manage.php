@@ -17,6 +17,22 @@ $stmt->execute();
 $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
+
+$meeting_id = intval($_GET['meeting_id'] ?? 0);
+
+$stmt = $conn->prepare("SELECT id, meeting_id, resource_type, resource_data, status FROM meeting_resources WHERE meeting_id = ?");
+$stmt->bind_param("i", $meeting_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$resources = [];
+while ($row = $result->fetch_assoc()) {
+  $resources[] = $row;  // $row contains 'id' key
+}
+
+echo json_encode($resources);
+
+
 ?>
 
 <!DOCTYPE html>
@@ -30,6 +46,44 @@ $stmt->close();
   <style>
     .expired-label { color: red; font-weight: bold; }
     .disabled-btn { pointer-events: none; opacity: 0.5; }
+    .resources-row td { background: #f8f9fa; }
+    .resource-container { margin: 10px 0; }
+    .resource-list ul { padding-left: 20px; }
+    .resource-list li { margin-bottom: 6px; }
+    /* Chat styles */
+    .chat-container {
+      min-width: 45%;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 8px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 300px;
+      font-size: 0.9rem;
+    }
+    .chat-messages {
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      background: #fafafa;
+      border-radius: 4px;
+      flex-grow: 1;
+      margin-bottom: 10px;
+    }
+    .chat-messages div {
+      margin-bottom: 8px;
+    }
+    .chat-messages strong {
+      font-weight: 600;
+    }
+    .chat-input-group {
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-group input[type="text"] {
+      flex-grow: 1;
+    }
   </style>
 </head>
 <body>
@@ -92,7 +146,6 @@ $stmt->close();
                 }
               ?>
             </select>
-
           </div>
         </div>
 
@@ -260,6 +313,7 @@ $stmt->close();
     updateUI(data);
   });
 
+  // Load meetings and render table with resource + chat row
   function loadMeetings() {
     fetch("get_meetings.php")
     .then(res => res.json())
@@ -267,7 +321,6 @@ $stmt->close();
       const tbody = document.getElementById("meetingTableBody");
       tbody.innerHTML = "";
       data.forEach(row => {
-        // Show subject label if you want: combine code + name or just subject id
         let subjectLabel = row.subject_name ?? row.subject ?? '-'; 
         tbody.innerHTML += `
           <tr data-id="${row.id}">
@@ -283,11 +336,46 @@ $stmt->close();
               <button class="btn btn-success btn-sm action-btn" data-action="activate">Activate</button>
               <button class="btn btn-warning btn-sm action-btn" data-action="disable">Disable</button>
               <button class="btn btn-danger btn-sm action-btn" data-action="delete">Delete</button>
+              <button class="btn btn-info btn-sm resources-btn" data-id="${row.id}">Resources & Chat</button>
             </td>
-          </tr>`;
+          </tr>
+          <tr class="resources-row" data-id="${row.id}" style="display:none;">
+            <td colspan="9">
+              <div class="d-flex gap-4" style="align-items: flex-start;">
+                
+                <!-- Resources Box -->
+                <div class="resource-container flex-grow-1" style="min-width: 45%; border: 1px solid #ccc; padding: 15px; border-radius: 8px; background: #f8f9fa;">
+                  <h6>Resources for "${row.title}"</h6>
+                  <div class="resource-list" id="resource-list-${row.id}">Loading resources...</div>
+                  <div class="resource-upload mt-3">
+                    <div class='d-flex'>
+                      <input type="file" class='form-control w-50' id="resource-file-${row.id}" />
+                      &nbsp;&nbsp;&nbsp;
+                      <button class="btn btn-sm btn-primary upload-resource-btn" data-id="${row.id}">Upload File</button>
+                    </div>
+                    <br/>
+                    <input type="text" id="resource-link-${row.id}" placeholder="Add resource link here" class="form-control mb-2" />
+                    <button class="btn btn-sm btn-secondary add-link-btn" data-id="${row.id}">Add Link</button>
+                  </div>
+                </div>
+
+                <!-- Chat Box -->
+                <div class="chat-container flex-grow-1">
+                  <h6>Chat for "${row.title}"</h6>
+                  <div class="chat-messages" id="chat-messages-${row.id}">Loading chat...</div>
+                  <div class="chat-input-group">
+                    <input type="text" id="chat-input-${row.id}" placeholder="Type a message..." />
+                    <button class="btn btn-primary btn-sm send-chat-btn" data-id="${row.id}">Send</button>
+                  </div>
+                </div>
+
+              </div>
+            </td>
+          </tr>
+        `;
       });
 
-      // Attach action listeners
+      // Action buttons (activate/disable/delete)
       document.querySelectorAll(".action-btn").forEach(button => {
         button.addEventListener("click", () => {
           const action = button.getAttribute("data-action");
@@ -312,10 +400,208 @@ $stmt->close();
           .catch(() => alert("An error occurred."));
         });
       });
+
+      // Toggle resources + chat row
+      document.querySelectorAll(".resources-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const meetingId = btn.getAttribute("data-id");
+          const resourcesRow = document.querySelector(`.resources-row[data-id="${meetingId}"]`);
+          if (!resourcesRow) return;
+
+          if (resourcesRow.style.display === "none") {
+            resourcesRow.style.display = "table-row";
+            loadResources(meetingId);
+            loadChat(meetingId);
+          } else {
+            resourcesRow.style.display = "none";
+          }
+        });
+      });
+
+      // Upload resource file
+      document.querySelectorAll(".upload-resource-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const meetingId = btn.getAttribute("data-id");
+          const fileInput = document.getElementById(`resource-file-${meetingId}`);
+          if (fileInput.files.length === 0) {
+            alert("Please select a file to upload.");
+            return;
+          }
+          const formData = new FormData();
+          formData.append("file", fileInput.files[0]);
+          formData.append("meeting_id", meetingId);
+
+          fetch("upload_resource.php", { method: "POST", body: formData })
+            .then(res => res.json())
+            .then(resp => {
+              if (resp.success) {
+                loadResources(meetingId);
+                fileInput.value = "";
+              } else {
+                alert("Upload failed: " + resp.message);
+              }
+            })
+            .catch(() => alert("Error uploading file."));
+        });
+      });
+
+
+      // Add resource link
+      document.querySelectorAll(".add-link-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const meetingId = btn.getAttribute("data-id");
+          const linkInput = document.getElementById(`resource-link-${meetingId}`);
+          const link = linkInput.value.trim();
+
+          if (!link) {
+            alert("Please enter a link.");
+            return;
+          }
+
+          fetch("add_resource_link.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+            body: new URLSearchParams({
+              meeting_id: meetingId,
+              resource_type: "link",
+              resource_data: link
+            })
+          })
+          .then(res => res.json())
+          .then(resp => {
+            if (resp.success) {
+              loadResources(meetingId);
+              linkInput.value = "";
+            } else {
+              alert("Failed to add link: " + resp.message);
+            }
+          })
+          .catch(() => alert("Error adding link."));
+        });
+      });
+
+    })
+    .catch(() => {
+      alert("Failed to load meetings.");
     });
   }
 
-  window.addEventListener("DOMContentLoaded", loadMeetings);
+  // Load resources for a meeting
+function loadResources(meetingId) {
+  const container = document.getElementById(`resource-list-${meetingId}`);
+  container.innerHTML = "Loading resources...";
+  fetch(`get_meeting_resources.php?meeting_id=${meetingId}`)
+    .then(res => res.json())
+    .then(resources => {
+      if (!resources.length) {
+        container.innerHTML = "<p>No resources available.</p>";
+        return;
+      }
+
+      let html = "<ul>";
+resources.forEach(r => {
+  const disabledStyle = r.status === "disabled" ? "style='opacity: 0.5;'" : "";
+  const displayName = r.type === "file" ? r.name : r.url;
+
+  html += `<li ${disabledStyle}>
+    ${r.type === "file"
+      ? `<a href="../uploads/meeting_resources/${r.name}" target="_blank" download><i class="fa fa-file"></i> ${r.name}</a>`
+      : `<a href="${r.url}" target="_blank"><i class="fa fa-link"></i> ${r.url}</a>`
+    }
+    &nbsp;
+    <button class="btn btn-sm btn-danger delete-resource-btn" data-id="${r.id}" type="button">Delete</button>
+  </li>`;
+});
+html += "</ul>";
+container.innerHTML = html;
+
+
+    })
+    .catch(() => {
+      container.innerHTML = "<p>Error loading resources.</p>";
+    });
+}
+
+document.body.addEventListener('click', e => {
+  if (e.target.closest('.delete-resource-btn')) {
+    const btn = e.target.closest('.delete-resource-btn');
+    const resourceId = btn.getAttribute('data-id');
+
+    if (!confirm("Are you sure you want to delete this resource?")) return;
+
+    fetch('delete_resource.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ id: resourceId })
+    })
+    .then(res => res.json())
+    .then(resp => {
+      if (resp.success) {
+        alert("Resource deleted successfully.");
+        // Reload the resources list for this meeting
+        const resourceList = btn.closest('.resource-list');
+        if (resourceList) {
+          const idMatch = resourceList.id.match(/resource-list-(\d+)/);
+          if (idMatch) {
+            loadResources(idMatch[1]);
+          }
+        }
+      } else {
+        alert("Failed to delete resource: " + (resp.message || 'Unknown error'));
+      }
+    })
+    .catch(() => alert("Error deleting resource."));
+  }
+});
+
+
+
+
+  // Chat functionality (basic polling)
+  function loadChat(meetingId) {
+    const chatMessages = document.getElementById(`chat-messages-${meetingId}`);
+    fetch(`get_meeting_chat.php?meeting_id=${meetingId}`)
+      .then(res => res.json())
+      .then(messages => {
+        chatMessages.innerHTML = "";
+        messages.forEach(msg => {
+          const time = new Date(msg.created_at).toLocaleTimeString();
+          chatMessages.innerHTML += `<div><strong>${msg.user_name}:</strong> ${msg.message} <small class="text-muted">[${time}]</small></div>`;
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      })
+      .catch(() => {
+        chatMessages.innerHTML = "<div>Error loading chat messages.</div>";
+      });
+  }
+
+  // Send chat message
+  document.body.addEventListener("click", e => {
+    if (e.target.classList.contains("send-chat-btn")) {
+      const meetingId = e.target.getAttribute("data-id");
+      const input = document.getElementById(`chat-input-${meetingId}`);
+      const message = input.value.trim();
+      if (!message) return alert("Please enter a message.");
+      fetch("send_meeting_chat.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ meeting_id: meetingId, message })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          input.value = "";
+          loadChat(meetingId);
+        } else {
+          alert("Failed to send message: " + (data.message || ""));
+        }
+      })
+      .catch(() => alert("Error sending message."));
+    }
+  });
+
+  // Initial load
+  loadMeetings();
 </script>
 
 </body>
