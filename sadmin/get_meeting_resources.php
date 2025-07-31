@@ -7,7 +7,7 @@ if ($meeting_id <= 0) {
     exit();
 }
 
-$sql = "SELECT resource_type, resource_data FROM meeting_resources WHERE meeting_id = ?";
+$sql = "SELECT id, resource_type, resource_data, status FROM meeting_resources WHERE meeting_id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $meeting_id);
 $stmt->execute();
@@ -17,14 +17,16 @@ $data = [];
 
 while ($row = $result->fetch_assoc()) {
     $type = $row['resource_type'];
-    $filePath = $row['resource_data']; // e.g., uploads/meeting_resources/filename.png
+    $resourceData = $row['resource_data'];
 
-    // Build response
     $data[] = [
+        'id' => $row['id'], // ✅ important for delete
         'type' => $type,
-        'url' => $filePath,
-        'name' => basename($filePath)
+        'url' => $resourceData,
+        'name' => basename($resourceData),
+        'status' => $row['status']
     ];
 }
 
 echo json_encode($data);
+?>

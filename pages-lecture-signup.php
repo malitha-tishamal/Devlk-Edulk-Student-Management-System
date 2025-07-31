@@ -84,11 +84,11 @@ session_start();
                                         <!-- <p class="text-center small">Enter your username & password to login</p> -->
                                     </div>
 
-                                    <form action="lecure-register.php" method="POST" class="row g-3 needs-validation" novalidate>
+                                    <form action="lecture-register-process.php" method="POST" class="row g-3 needs-validation" novalidate>
 
                                         <div class="col-12">
                                          <label for="name" class="form-label">Name</label>
-                                            <input type="text" class="form-control" id="name" name="username" required>
+                                            <input type="text" class="form-control" id="name" name="name" required>
                                             <div class="invalid-feedback" style="font-size:14px" id="">
                                                 Please enter the name
                                             </div>
@@ -172,49 +172,6 @@ session_start();
 
  
    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // On form submit
-            $("#signup-form").submit(function(event) {
-                event.preventDefault(); // Prevent form submission
-
-                $.ajax({
-                    url: "register.php", // Send form data to register.php
-                    type: "POST",
-                    data: $(this).serialize(), // Serialize the form data
-                    dataType: "json", // Expect JSON response
-                    success: function(response) {
-                        let popupAlert = $("#popup-alert");
-
-                        // Set the message class and text based on the response status
-                        if (response.status === "success") {
-                            popupAlert.removeClass("alert-error").addClass("alert-success").html(response.message);
-                        } else {
-                            popupAlert.removeClass("alert-success").addClass("alert-error").html(response.message);
-                        }
-
-                        // Show the alert
-                        popupAlert.show();
-
-                        // Hide the alert after 10 seconds
-                        setTimeout(function() {
-                            popupAlert.fadeOut();
-                        }, 10000);
-
-                        // If success, redirect after message disappears
-                        if (response.status === "success") {
-                            setTimeout(function() {
-                                window.location.href = "index.php"; // Change this to your target redirect URL
-                            }, 10000); // Same 10 seconds delay before redirect
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        alert("AJAX Error: " + xhr.responseText); // Handle AJAX error
-                    }
-                });
-            });
-        });
-    </script>
 
 
 

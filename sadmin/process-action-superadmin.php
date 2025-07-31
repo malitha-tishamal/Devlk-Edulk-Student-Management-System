@@ -35,22 +35,25 @@ if (isset($_GET['disable_id'])) {
     }
 }
 
-// Delete user
 if (isset($_GET['delete_id'])) {
-    $user_id = $_GET['delete_id'];
-    $sql = "DELETE FROM admins WHERE id = ?";
-    
-    if ($stmt = $conn->prepare($sql)) {
-        $stmt->bind_param("i", $user_id);
-        
-        if ($stmt->execute()) {
-            header("Location: manage-super-admins.php?message=User deleted successfully!&msg_type=success");
-        } else {
-            header("Location: manage-super-admins.php?message=Error deleting user.&msg_type=danger");
-        }
-        $stmt->close();
+    $delete_id = intval($_GET['delete_id']);
+
+    // Prevent deleting system superadmin (ID = 1)
+    if ($delete_id === 1) {
+        header("Location: manage-admins.php?error=superadmin_protected");
+        exit();
     }
+
+    // Proceed with deletion
+    $stmt = $conn->prepare("DELETE FROM sadmins WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $stmt->close();
+
+    header("Location: manage-admins.php?success=admin_deleted");
+    exit();
 }
+
 
 
 

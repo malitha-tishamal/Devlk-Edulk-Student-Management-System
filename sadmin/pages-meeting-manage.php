@@ -84,6 +84,11 @@ echo json_encode($resources);
     .chat-input-group input[type="text"] {
       flex-grow: 1;
     }
+    .disabled-btn {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
   </style>
 </head>
 <body>
@@ -331,7 +336,14 @@ echo json_encode($resources);
             <td>${row.role ?? '-'}</td>
             <td>${row.status}</td>
             <td>${subjectLabel}</td>
-            <td><a href="${row.zoom_link}" target="_blank"><button type="button" class="btn btn-primary btn-sm">Join</button></a></td>
+            <td>
+                ${
+                  row.status === 'disabled' || row.status === 'expired'
+                    ? `<button type="button" class="btn btn-primary btn-sm disabled-btn" disabled>Join</button>`
+                    : `<a href="${row.zoom_link}" target="_blank"><button type="button" class="btn btn-primary btn-sm">Join</button></a>`
+                }
+              </td>
+
             <td>
               <button class="btn btn-success btn-sm action-btn" data-action="activate">Activate</button>
               <button class="btn btn-warning btn-sm action-btn" data-action="disable">Disable</button>

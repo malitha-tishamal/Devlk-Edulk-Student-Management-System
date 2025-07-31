@@ -122,6 +122,8 @@ $yearResult = $conn->query($yearQuery);
                     <th>Now</th>
                     <th>Mobile</th>
                     <th>Home</th>
+                    <th>Created at</th>
+                    <th>Last Login</th>
                     <th>Status</th>
                     <th></th>
                     <th>Action</th>
@@ -129,7 +131,7 @@ $yearResult = $conn->query($yearQuery);
                     <th>Edit</th>
                 </tr>
                 <tr>
-                    <th colspan="12" class="text-center"></th> <!-- Empty columns for alignment -->
+                    <th colspan="14" class="text-center"></th> <!-- Empty columns for alignment -->
                     <th class="text-center">Approve</th>
                     <th class="text-center">Disable</th>
                     <th class="text-center">Delete</th>
@@ -151,6 +153,8 @@ $yearResult = $conn->query($yearQuery);
                       echo "<td>{$row['nowstatus']}</td>";
                       echo "<td>{$row['mobile']}</td>";
                       echo "<td>{$row['mobile2']}</td>";
+                      echo "<td>{$row['created_at']}</td>";
+                      echo "<td>{$row['last_login']}</td>";
 
                       // Status Badge
                       echo "<td>";

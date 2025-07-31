@@ -72,6 +72,8 @@ $result = $conn->query($sql);
                                         <th>NIC</th>
                                         <th>Email</th>
                                         <th>Mobile</th>
+                                        <th>Created at</th>
+                                        <th>last Login</th>
                                         <th>Status</th>
                                         <th></th>
                                         <th>Action</th>
@@ -79,7 +81,7 @@ $result = $conn->query($sql);
                                         <th>Edit</th>
                                     </tr>
                                     <tr>
-                                        <th colspan="7" class="text-center"></th> <!-- Empty columns for alignment -->
+                                        <th colspan="9" class="text-center"></th> <!-- Empty columns for alignment -->
                                         <th class="text-center">Approve</th>
                                         <th class="text-center">Disable</th>
                                         <th class="text-center">Delete</th>
@@ -91,11 +93,13 @@ $result = $conn->query($sql);
                                         while ($row = $result->fetch_assoc()) {
                                             echo "<tr>";
                                             echo "<td>" . $row['id'] . "</td>";
-                                            echo " <td><img src='../lectures/" . $row["profile_picture"] . "' alt='Profile' width='50'></td>";
-                                            echo "<td>" . $row['username'] . "</td>";
+                                             echo "<td>" . $row['name'] . "</td>";
+                                            echo " <td><img src='../lectures/" . $row["profile_picture"] . "' alt='Profile' width='85'></td>";
                                             echo "<td>" . $row['nic'] . "</td>";
                                             echo "<td>" . $row['email'] . "</td>";
                                             echo "<td>" . $row['mobile'] . "</td>";
+                                             echo "<td>" . $row['created_at'] . "</td>";
+                                              echo "<td>" . $row['last_login'] . "</td>";
 
                                             // Status Column with Color
                                             echo "<td>";

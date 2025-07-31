@@ -154,7 +154,7 @@ function getFileIconColored($ext) {
                     echo "<h5 class='subject-heading'>" . htmlspecialchars($subjectName) . "</h5>";
 
                     // Fetch files for this subject
-                    $stmt = $conn->prepare("SELECT title, category, filename FROM tuition_files WHERE subject_id = ? AND status = 'active' ORDER BY uploaded_at DESC");
+                    $stmt = $conn->prepare("SELECT * FROM tuition_files WHERE subject_id = ? AND status = 'active' ORDER BY uploaded_at DESC");
                     $notesByWeek = [];
                     $otherFiles = [];
                     if ($stmt) {
@@ -183,13 +183,14 @@ function getFileIconColored($ext) {
                     foreach ($notesByWeek as $week => $files) {
                         echo "<h6 class='week-subheading'>" . htmlspecialchars($week) . "</h6>";
                         echo '<table class="table table-bordered mb-4">';
-                        echo '<thead><tr><th>Title</th><th>Category</th><th>Extension</th><th>Download</th></tr></thead><tbody>';
+                        echo '<thead><tr><th>Title</th><th>Category</th><th>Extension</th><th>Uploaded at</th><th>Download</th></tr></thead><tbody>';
                         foreach ($files as $f) {
                             $ext = pathinfo($f['filename'], PATHINFO_EXTENSION);
                             echo "<tr>";
                             echo "<td>" . htmlspecialchars($f['title']) . "</td>";
                             echo "<td>" . htmlspecialchars($f['category']) . "</td>";
                             echo "<td>" . getFileIconColored($ext) . " " . strtoupper($ext) . "</td>";
+                            echo "<td>" . htmlspecialchars($f['uploaded_at']) . "</td>";
                             echo '<td><a href="../uploads/' . urlencode($f['filename']) . '" target="_blank" rel="noopener">Download</a></td>';
                             echo "</tr>";
                         }
@@ -200,13 +201,14 @@ function getFileIconColored($ext) {
                     if (!empty($otherFiles)) {
                         echo "<h6 class='week-subheading'>Other Files</h6>";
                         echo '<table class="table table-bordered mb-4">';
-                        echo '<thead><tr><th>Title</th><th>Category</th><th>Extension</th><th>Download</th></tr></thead><tbody>';
+                        echo '<thead><tr><th>Title</th><th>Category</th><th>Extension</th><th>Uploaded at</th><th>Download</th></tr></thead><tbody>';
                         foreach ($otherFiles as $f) {
                             $ext = pathinfo($f['filename'], PATHINFO_EXTENSION);
                             echo "<tr>";
                             echo "<td>" . htmlspecialchars($f['title']) . "</td>";
                             echo "<td>" . htmlspecialchars($f['category']) . "</td>";
                             echo "<td>" . getFileIconColored($ext) . " " . strtoupper($ext) . "</td>";
+                            echo "<td>" . htmlspecialchars($f['uploaded_at']) . "</td>";
                             echo '<td><a href="../uploads/' . urlencode($f['filename']) . '" target="_blank" rel="noopener">Download</a></td>';
                             echo "</tr>";
                         }

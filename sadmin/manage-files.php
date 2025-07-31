@@ -144,7 +144,9 @@ function getFileIconColored($ext) {
                                             <select name="category[]" class="form-select" required>
                                                 <option value="">Category</option>
                                                 <option value="Pass Papers">Pass Papers</option>
-                                                <option value="Notes">Notes</option>
+                                                <option value="Model Paper">Model Papers</option>
+                                                <option value="Notes">Notes </option>
+                                                <option value="Lecturer Notes">Notes - Lecturer Upload</option>
                                                 <option value="Other">Other</option>
                                             </select>
                                         </div>
@@ -251,7 +253,7 @@ function getFileIconColored($ext) {
 
                                 <?php
                                 // Fetch files for this subject, grouped by Notes Weeks and Others
-                                $stmtFiles = $conn->prepare("SELECT id, title, category, filename, status FROM tuition_files WHERE subject_id = ? ORDER BY uploaded_at DESC");
+                                $stmtFiles = $conn->prepare("SELECT * FROM tuition_files WHERE subject_id = ? ORDER BY uploaded_at DESC");
                                 $notesByWeek = [];
                                 $otherFiles = [];
 
@@ -286,6 +288,7 @@ function getFileIconColored($ext) {
                                             <th>Title</th>
                                             <th>Category</th>
                                             <th>Extension</th>
+                                            <th>Uploaded_at</th>
                                             <th>File</th>
                                             <th>Status</th>
                                             <th>Action</th>
@@ -299,6 +302,7 @@ function getFileIconColored($ext) {
                                                 <td><?= htmlspecialchars($f['title']) ?></td>
                                                 <td><?= htmlspecialchars($f['category']) ?></td>
                                                 <td><?= getFileIconColored($ext) . ' ' . strtoupper(htmlspecialchars($ext)) ?></td>
+                                                 <td><?= htmlspecialchars($f['uploaded_at']) ?></td>
                                                 <td><a href="../uploads/<?= rawurlencode($f['filename']) ?>" target="_blank" rel="noopener">View</a></td>
                                                 <td><span class="badge bg-<?= $f['status'] === 'active' ? 'success' : 'secondary' ?>">
                                                         <?= ucfirst(htmlspecialchars($f['status'])) ?>
@@ -326,6 +330,7 @@ function getFileIconColored($ext) {
                                             <th>Title</th>
                                             <th>Category</th>
                                             <th>Extension</th>
+                                            <th>Uploaded_at</th>
                                             <th>File</th>
                                             <th>Status</th>
                                             <th>Action</th>
@@ -339,6 +344,7 @@ function getFileIconColored($ext) {
                                                 <td><?= htmlspecialchars($f['title']) ?></td>
                                                 <td><?= htmlspecialchars($f['category']) ?></td>
                                                 <td><?= getFileIconColored($ext) . ' ' . strtoupper(htmlspecialchars($ext)) ?></td>
+                                                <td><?= htmlspecialchars($f['uploaded_at']) ?></td>
                                                 <td><a href="../uploads/<?= rawurlencode($f['filename']) ?>" target="_blank" rel="noopener">View</a></td>
                                                 <td><span class="badge bg-<?= $f['status'] === 'active' ? 'success' : 'secondary' ?>">
                                                         <?= ucfirst(htmlspecialchars($f['status'])) ?>

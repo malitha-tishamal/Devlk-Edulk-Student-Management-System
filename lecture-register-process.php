@@ -3,7 +3,7 @@
 session_start();
 
 // Include database connection
-include_once("../includes/db-conn.php");
+include_once("includes/db-conn.php");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get form inputs and sanitize them
@@ -24,7 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Duplicate found
             $_SESSION['status'] = 'error';
             $_SESSION['message'] = 'Email or NIC already exists. Please try again with different details.';
-            header("Location: pages-add-lecture.php");
             $stmt->close();
             exit();
         }
@@ -44,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Set session message for success
             $_SESSION['status'] = 'success';
             $_SESSION['message'] = 'Lecture account successfully created!';
-            header("Location: pages-add-lecture.php");
+            header("Location: index.php");
             exit();
         } else {
             // Set session message for failure

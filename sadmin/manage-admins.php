@@ -54,6 +54,15 @@ $result = $conn->query($sql);
             </nav>
         </div>
 
+        <?php if (isset($_GET['error']) && $_GET['error'] == 'superadmin_protected') : ?>
+        <div class="alert alert-danger">Superadmin account cannot be deleted!</div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['success']) && $_GET['success'] == 'admin_deleted') : ?>
+        <div class="alert alert-success">Admin account deleted successfully.</div>
+        <?php endif; ?>
+
+
         <section class="section">
             <div class="row">
                 <div class="col-lg-12">
@@ -72,6 +81,8 @@ $result = $conn->query($sql);
                                         <th>NIC</th>
                                         <th>Email</th>
                                         <th>Mobile</th>
+                                        <th>Acccount Created</th>
+                                        <th>Last Login</th>
                                         <th>Status</th>
                                         <th></th>
                                         <th>Action</th>
@@ -79,7 +90,7 @@ $result = $conn->query($sql);
                                          <th>Edit</th>
                                     </tr>
                                     <tr>
-                                        <th colspan="7" class="text-center"></th> <!-- Empty columns for alignment -->
+                                        <th colspan="9" class="text-center"></th> <!-- Empty columns for alignment -->
                                         <th class="text-center">Approve</th>
                                         <th class="text-center">Disable</th>
                                         <th class="text-center">Delete</th>
@@ -91,11 +102,13 @@ $result = $conn->query($sql);
                                         while ($row = $result->fetch_assoc()) {
                                             echo "<tr>";
                                             echo "<td>" . $row['id'] . "</td>";
-                                            echo "<td><img src='" . $row["profile_picture"] . "' alt='Profile' width='50'></td>";
+                                            echo "<td><img src='" . $row["profile_picture"] . "' alt='Profile' width='85'></td>";
                                             echo "<td>" . $row['name'] . "</td> ";
                                             echo "<td>" . $row['nic'] . "</td>";
                                             echo "<td>" . $row['email'] . "</td>";
                                             echo "<td>" . $row['mobile'] . "</td>";
+                                            echo "<td>" . $row['created_at'] . "</td>";
+                                            echo "<td>" . $row['last_login'] . "</td>";
 
                                             // Status Column
                                             echo "<td>";
@@ -113,20 +126,29 @@ $result = $conn->query($sql);
                                             echo "</td>";
 
                                             // Action Buttons
-                                            echo "<td class='text-center'>
-                                                    <button class='btn btn-success btn-sm w-100 approve-btn' data-id='" . $row['id'] . "'>Approve</button>
-                                                  </td>";
-                                            echo "<td class='text-center'>
-                                                    <button class='btn btn-warning btn-sm w-100 disable-btn' data-id='" . $row['id'] . "'>Disable</button>
-                                                  </td>";
-                                            echo "<td class='text-center'>
-                                                    <button class='btn btn-danger btn-sm w-100 delete-btn' data-id='" . $row['id'] . "'>Delete</button>
-                                                  </td>";
+                                           // Check if this row is the logged-in superadmin
+                                                $is_self = ($row['id'] == $_SESSION['sadmin_id']);
+                                                $is_main_admin = ($row['id'] == 1); // System superadmin
 
-                                             // Edit Profile Button
-                                            echo "<td class='text-center'>
-                                                    <a href='edit-admin.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm w-100'>Edit</a>
-                                                  </td>";
+                                                $disable_all = ($is_self || $is_main_admin); // Disable buttons for self OR ID = 1
+
+                                                $btn_disabled = $disable_all ? "disabled style='opacity: 0.5; pointer-events: none;'" : "";
+                                                $edit_disabled = $is_self ? "disabled style='opacity: 0.5; pointer-events: none;'" : "";
+
+                                                echo "<td class='text-center'>
+                                                        <button class='btn btn-success btn-sm w-100 approve-btn' data-id='" . $row['id'] . "' $btn_disabled>Approve</button>
+                                                      </td>";
+                                                echo "<td class='text-center'>
+                                                        <button class='btn btn-warning btn-sm w-100 disable-btn' data-id='" . $row['id'] . "' $btn_disabled>Disable</button>
+                                                      </td>";
+                                                echo "<td class='text-center'>
+                                                        <button class='btn btn-danger btn-sm w-100 delete-btn' data-id='" . $row['id'] . "' $btn_disabled>Delete</button>
+                                                      </td>";
+                                                echo "<td class='text-center'>
+                                                        <a href='edit-admin.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm w-100' $edit_disabled>Edit</a>
+                                                      </td>";
+
+
 
                                            
                                             echo "</tr>";

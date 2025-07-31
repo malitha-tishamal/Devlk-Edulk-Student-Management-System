@@ -2,168 +2,194 @@
 session_start();
 require_once '../includes/db-conn.php';
 
+// Redirect if not logged in
 if (!isset($_SESSION['sadmin_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    $_SESSION['error_message'] = "Invalid request.";
-    header("Location: manage-batchadmins.php");
-    exit();
-}
-
-$admin_id = $_GET['id'];
-
-// Fetch sadmin info
-$sadmin_id = $_SESSION['sadmin_id'];
-$stmt = $conn->prepare("SELECT name, email, nic, mobile, profile_picture FROM sadmins WHERE id = ?");
-$stmt->bind_param("i", $sadmin_id);
-$stmt->execute();
-$sadmin_result = $stmt->get_result();
-$user = $sadmin_result->fetch_assoc();
-$stmt->close();
-
-// Fetch admin (representer) info
-$stmt = $conn->prepare("SELECT * FROM admins WHERE id = ?");
-$stmt->bind_param("i", $admin_id);
+// Fetch user details
+$user_id = $_SESSION['sadmin_id'];
+$sql = "SELECT name, email, nic,mobile,profile_picture FROM sadmins WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
-$admin = $result->fetch_assoc();
+$user = $result->fetch_assoc();
 $stmt->close();
 
-if (!$admin) {
-    $_SESSION['error_message'] = "Representer not found.";
-    header("Location: manage-batchadmins.php");
-    exit();
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name']);
-    $email = trim($_POST['email']);
-    $nic = trim($_POST['nic']);
-    $mobile = trim($_POST['mobile']);
-    $registration_number = trim($_POST['registration_number']);
-    $gender = $_POST['gender'];
-    $status = $_POST['status'];
-
-    if (empty($name) || empty($email) || empty($nic) || empty($mobile) || empty($gender) || empty($status)) {
-        $_SESSION['error_message'] = "All fields are required!";
-    } else {
-        $stmt = $conn->prepare("UPDATE admins SET name=?, email=?, nic=?, mobile=?, registration_number=?, gender=?, status=? WHERE id=?");
-        $stmt->bind_param("sssssssi", $name, $email, $nic, $mobile, $registration_number, $gender, $status, $admin_id);
-
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Representer updated successfully!";
-            header("Location: manage-batchadmins.php");
-            exit();
-        } else {
-            $_SESSION['error_message'] = "Error updating details.";
-        }
-
-        $stmt->close();
-    }
-}
+// Fetch users from the database
+// SQL query to get data
+$sql = "SELECT * FROM admins";
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Edit Representer</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <title>Batch Representers Manage - Edulk</title>
+
     <?php include_once("../includes/css-links-inc.php"); ?>
 </head>
+
 <body>
 
-<?php include_once("../includes/header.php"); ?>
-<?php include_once("../includes/sadmin-sidebar.php"); ?>
+    <?php include_once("../includes/header.php") ?>
 
-<main id="main" class="main">
-    <div class="pagetitle">
-        <h1>Edit Representer</h1>
-        <nav>
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="index.php">Dashboard</a></li>
-                <li class="breadcrumb-item active">Edit Representer</li>
-            </ol>
-        </nav>
-    </div>
+    <?php include_once("../includes/sadmin-sidebar.php") ?>
 
-    <section class="section">
-        <div class="card">
-            <div class="card-body pt-4">
-
-                <?php
-                if (isset($_SESSION['error_message'])) {
-                    echo "<div class='alert alert-danger'>" . $_SESSION['error_message'] . "</div>";
-                    unset($_SESSION['error_message']);
-                }
-
-                if (isset($_SESSION['success_message'])) {
-                    echo "<div class='alert alert-success'>" . $_SESSION['success_message'] . "</div>";
-                    unset($_SESSION['success_message']);
-                }
-                ?>
-
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" name="name" value="<?= htmlspecialchars($admin['name']) ?>" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" name="email" value="<?= htmlspecialchars($admin['email']) ?>" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">NIC</label>
-                        <input type="text" class="form-control" name="nic" value="<?= htmlspecialchars($admin['nic']) ?>" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Mobile</label>
-                        <input type="text" class="form-control" name="mobile" value="<?= htmlspecialchars($admin['mobile']) ?>" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Registration Number</label>
-                        <input type="text" class="form-control" name="registration_number" value="<?= htmlspecialchars($admin['registration_number']) ?>">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Gender</label><br>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="gender" value="Male" <?= $admin['gender'] == 'Male' ? 'checked' : '' ?>>
-                            <label class="form-check-label">Male</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="gender" value="Female" <?= $admin['gender'] == 'Female' ? 'checked' : '' ?>>
-                            <label class="form-check-label">Female</label>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" name="status" required>
-                            <option value="active" <?= $admin['status'] == 'active' ? 'selected' : '' ?>>Active</option>
-                            <option value="pending" <?= $admin['status'] == 'pending' ? 'selected' : '' ?>>Pending</option>
-                            <option value="disabled" <?= $admin['status'] == 'disabled' ? 'selected' : '' ?>>Disabled</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn btn-success">Update</button>
-                    <a href="manage-batchadmins.php" class="btn btn-secondary">Cancel</a>
-                </form>
-
-            </div>
+    <main id="main" class="main">
+        <div class="pagetitle">
+            <h1>Manage Representers</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+                    <li class="breadcrumb-item">Pages</li>
+                    <li class="breadcrumb-item active">Manage Representers</li>
+                </ol>
+            </nav>
         </div>
-    </section>
-</main>
 
-<?php include_once("../includes/footer.php"); ?>
-<?php include_once("../includes/js-links-inc.php"); ?>
+        <section class="section">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Reprenters Management</h5>
+                            <p>Manage Representers here.</p>
+
+                            <!-- Table with user data -->
+                            <table class="table datatable">
+                                <thead class="align-middle text-center">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Profile Picture</th>
+                                        <th>Name</th>
+                                        <th>NIC</th>
+                                        <th>Email</th>
+                                        <th>Mobile</th>
+                                        <th>Created at</th>
+                                        <th>last Login</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                        <th>Action</th>
+                                        <th></th>
+                                        <th>Edit</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="9" class="text-center"></th> <!-- Empty columns for alignment -->
+                                        <th class="text-center">Approve</th>
+                                        <th class="text-center">Disable</th>
+                                        <th class="text-center">Delete</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    if ($result->num_rows > 0) {
+                                        while ($row = $result->fetch_assoc()) {
+                                            echo "<tr>";
+                                            echo "<td>" . $row['id'] . "</td>";
+                                            echo " <td><img src='../admin/" . $row["profile_picture"] . "' alt='Profile' width='85'></td>";
+                                             echo "<td>" . $row['name'] . "</td>";
+                                            echo "<td>" . $row['nic'] . "</td>";
+                                            echo "<td>" . $row['email'] . "</td>";
+                                            echo "<td>" . $row['mobile'] . "</td>";
+                                             echo "<td>" . $row['created_at'] . "</td>";
+                                              echo "<td>" . $row['last_login'] . "</td>";
+
+                                            // Status Column with Color
+                                            echo "<td>";
+                                            $status = strtolower($row['status']); // Convert to lowercase for case insensitivity
+
+                                            if ($status === 'active' || $status === 'approved') {
+                                                echo "<span class='btn btn-success btn-sm w-100 text-center'>Approved</span>";
+                                            } elseif ($status === 'disabled') {
+                                                echo "<span class='btn btn-danger btn-sm w-100 text-center'>Disabled</span>";
+                                            } elseif ($status === 'pending') {
+                                                echo "<span class='btn btn-warning btn-sm w-100 text-center'>Pending</span>";
+                                            } else {
+                                                echo "<span class='btn btn-secondary btn-sm w-100 text-center'>" . ucfirst($row['status']) . "</span>";
+                                            }
+                                            echo "</td>";
+
+                                            // Action Buttons in their respective columns
+                                            echo "<td class='text-center'>
+                                                    <button class='btn btn-success btn-sm w-100 approve-btn' data-id='" . $row['id'] . "'>Approve</button>
+                                                  </td>";
+                                            echo "<td class='text-center'>
+                                                    <button class='btn btn-warning btn-sm w-100 disable-btn' data-id='" . $row['id'] . "'>Disable</button>
+                                                  </td>";
+                                            echo "<td class='text-center'>
+                                                    <button class='btn btn-danger btn-sm w-100 delete-btn' data-id='" . $row['id'] . "'>Delete</button>
+                                                  </td>";
+                                             // Edit Profile Button
+                                            echo "<td class='text-center'>
+                                                    <a href='edit-representer.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm w-100'>Edit</a>
+                                                  </td>";
+
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='9' class='text-center'>No users found.</td></tr>";
+                                    }
+                                    ?>
+                                </tbody>
+
+                            </table>
+                            <!-- End Table with user data -->
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <?php include_once("../includes/footer.php") ?>
+
+    <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+    <?php include_once("../includes/js-links-inc.php") ?>
+    <script type="text/javascript">
+      document.addEventListener('DOMContentLoaded', function () {
+        const approveButtons = document.querySelectorAll('.approve-btn');
+        const disableButtons = document.querySelectorAll('.disable-btn');
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+
+        approveButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const userId = this.getAttribute('data-id');
+                window.location.href = `process-batchadmins.php?approve_id=${userId}`;
+            });
+        });
+
+        disableButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const userId = this.getAttribute('data-id');
+                window.location.href = `process-batchadmins.php?disable_id=${userId}`;
+            });
+        });
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const userId = this.getAttribute('data-id');
+                if (confirm("Are you sure you want to delete this user?")) {
+                    window.location.href = `process-batchadmins.php?delete_id=${userId}`;
+                }
+            });
+        });
+      });
+    </script>
+
 </body>
+
 </html>
 
-<?php $conn->close(); ?>
+<?php
+// Close database connection
+$conn->close();
+?>

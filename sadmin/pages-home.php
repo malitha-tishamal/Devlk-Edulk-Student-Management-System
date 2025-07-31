@@ -133,144 +133,88 @@ $stmt->close();
                     </style>
 
 
-                     <?php 
-                            $recent_admins_query = "SELECT * FROM sadmins ORDER BY last_login DESC LIMIT 20";
-                            $recent_admins_result = $conn->query($recent_admins_query);
-                            ?>
+        <section class="section">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
+                                                <?php
+                                        function displayUserCards($title, $result, $type = 'general', $imgBasePath = '../') {
+                                            ?>
+                                            <section class="section">
+                                                <div class="container mt-4">
+                                                    <h4 class="mb-3"><?= htmlspecialchars($title) ?></h4>
+                                                    <div class="row">
+                                                        <?php if ($result && $result->num_rows > 0): ?>
+                                                            <?php while ($user = $result->fetch_assoc()): 
+                                                                // Determine profile picture path
+                                                                $profilePath = $imgBasePath . $user['profile_picture'];
+                                                                $defaultPath = $imgBasePath . "uploads/profile_pictures/default.png";
 
-                            <section class="section">
-                                <div class="container mt-4">
-                                    <h4 class="mb-3">Last Logged-In Admins</h4>
-                                    <div class="row">
-                                        <?php if ($recent_admins_result && $recent_admins_result->num_rows > 0): ?>
-                                            <?php while ($admin = $recent_admins_result->fetch_assoc()): ?>
-                                                <div class="col-md-4 col-lg-3 mb-4">
-                                                    <div class="card mini-card shadow-lg p-3">
-                                                        <div class="d-flex align-items-center">
-                                                            <img src="<?php echo !empty($admin['profile_picture']) && file_exists( $admin['profile_picture']) 
-                                                                ?  htmlspecialchars($admin['profile_picture']) 
-                                                                : '../sadmin/uploads/profile_pictures/default.png'; ?>"
-                                                                alt="Profile Picture"
-                                                                class="rounded-circle me-3"
-                                                                style="width: 60px; height: 60px; object-fit: cover; border: 2px solid #007bff;"
-                                                                onerror="this.onerror=null;this.src='../sadmin/uploads/profile_pictures/default.png';">
-
-                                                            <div>
-                                                                <h6 class="mb-1"><?php echo htmlspecialchars($admin['name']); ?></h6>
-                                                                <small class="text-muted d-block mb-1"><?php echo htmlspecialchars($admin['email']); ?></small>
-                                                                <small class="text-secondary">
-                                                                    <i class="bi bi-clock-fill me-1"></i>
-                                                                    <?php 
-                                                                        echo !empty($admin['last_login']) 
-                                                                            ? date("M d, Y h:i A", strtotime($admin['last_login'])) 
-                                                                            : "Last login: N/A";
-                                                                    ?>
-                                                                </small>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            <?php endwhile; ?>
-                                        <?php else: ?>
-                                            <p class="text-muted">No recent super admin login records found.</p>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <?php 
-                                    $recent_lectures_query = "SELECT * FROM lectures ORDER BY last_login DESC LIMIT 20";
-                                    $recent_lectures_result = $conn->query($recent_lectures_query);
-                                    ?>
-
-                                    <section class="section">
-                                        <div class="container mt-4">
-                                            <h4 class="mb-3">Last Logged-In Lecturers</h4>
-                                            <div class="row">
-                                                <?php if ($recent_lectures_result && $recent_lectures_result->num_rows > 0): ?>
-                                                    <?php while ($admin = $recent_lectures_result->fetch_assoc()): ?>
-                                                        <div class="col-md-4 col-lg-3 mb-4">
-                                                            <div class="card mini-card shadow-lg p-3">
-                                                                <div class="d-flex align-items-center">
-                                                                    <img src="<?php echo !empty($admin['profile_picture']) && file_exists('../lectures/' .$admin['profile_picture']) 
-                                                                        ? htmlspecialchars($admin['profile_picture']) 
-                                                                        : '../lectures/uploads/profile_pictures/default.png'; ?>"
-                                                                        alt="Profile Picture"
-                                                                        class="rounded-circle me-3"
-                                                                        style="width: 60px; height: 60px; object-fit: cover; border: 2px solid #007bff;"
-                                                                        onerror="this.onerror=null;this.src='../lectures/uploads/profile_pictures/default.png';">
-
-                                                                    <div>
-                                                                        <h6 class="mb-1"><?php echo htmlspecialchars($admin['username']); ?></h6>
-                                                                        <small class="text-muted d-block mb-1"><?php echo htmlspecialchars($admin['email']); ?></small>
-                                                                        <small class="text-secondary">
-                                                                            <i class="bi bi-clock-fill me-1"></i>
-                                                                            <?php 
-                                                                                echo !empty($admin['last_login']) 
-                                                                                    ? date("M d, Y h:i A", strtotime($admin['last_login'])) 
-                                                                                    : "Last login: N/A";
-                                                                            ?>
-                                                                        </small>
+                                                                $profileSrc = (!empty($user['profile_picture']) && file_exists($profilePath)) 
+                                                                    ? htmlspecialchars($profilePath) 
+                                                                    : $defaultPath;
+                                                            ?>
+                                                                <div class="col-md-4 col-lg-3 mb-4">
+                                                                    <div class="card mini-card shadow-lg p-3">
+                                                                        <div class="d-flex align-items-center">
+                                                                            <img src="<?= $profileSrc ?>"
+                                                                                alt="Profile Picture"
+                                                                                class="rounded-circle me-3"
+                                                                                style="width: 80px; height: 80px; object-fit: cover; border: 2px solid #007bff;"
+                                                                                onerror="this.onerror=null;this.src='<?= $defaultPath ?>';">
+                                                                            <div>
+                                                                                <h6 class="mb-1"><?= htmlspecialchars($user['name']) ?></h6>
+                                                                                <small class="text-muted d-block mb-1"><?= htmlspecialchars($user['email']) ?></small>
+                                                                                <small class="text-secondary">
+                                                                                    <i class="bi bi-clock-fill me-1"></i>
+                                                                                    <?= !empty($user['last_login']) 
+                                                                                        ? date("M d, Y h:i A", strtotime($user['last_login'])) 
+                                                                                        : "Last login: N/A" ?>
+                                                                                </small>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                    <?php endwhile; ?>
-                                                <?php else: ?>
-                                                    <p class="text-muted">No recent lecturer login records found.</p>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    </section>
-
-
-
-
-
-                <?php 
-                    $recent_students_query = "SELECT * FROM students ORDER BY last_login DESC LIMIT 20";
-                    $recent_students_result = $conn->query($recent_students_query);
-                    ?>
-
-                    <section class="section">
-                        <div class="container mt-4">
-                            <h4 class="mb-3">Last 20 Logged-In Students</h4>
-                            <div class="row">
-                                <?php if ($recent_students_result && $recent_students_result->num_rows > 0): ?>
-                                    <?php while ($student = $recent_students_result->fetch_assoc()): ?>
-                                        <div class="col-md-4 col-lg-3 mb-4">
-                                            <div class="card mini-card shadow-lg p-3">
-                                                <div class="d-flex align-items-center">
-                                                    <img src="<?php echo !empty($student['profile_picture']) && file_exists('../' . $student['profile_picture']) 
-                                                        ? '../' . htmlspecialchars($student['profile_picture']) 
-                                                        : '../uploads/profile_pictures/default.png'; ?>"
-                                                        alt="Profile Picture"
-                                                        class="rounded-circle me-3"
-                                                        style="width: 60px; height: 60px; object-fit: cover; border: 2px solid #007bff;"
-                                                        onerror="this.onerror=null;this.src='../uploads/profile_pictures/default.png';">
-
-                                                    <div>
-                                                        <h6 class="mb-1"><?php echo htmlspecialchars($student['name']); ?></h6>
-                                                        <small class="text-muted d-block mb-1"><?php echo htmlspecialchars($student['email']); ?></small>
-                                                        <small class="text-secondary">
-                                                            <i class="bi bi-clock-fill me-1"></i>
-                                                            <?php 
-                                                                echo !empty($student['last_login']) 
-                                                                    ? date("M d, Y h:i A", strtotime($student['last_login'])) 
-                                                                    : "Last login: N/A";
-                                                            ?>
-                                                        </small>
+                                                            <?php endwhile; ?>
+                                                        <?php else: ?>
+                                                            <p class="text-muted">No recent <?= strtolower($title) ?> records found.</p>
+                                                        <?php endif; ?>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    <?php endwhile; ?>
-                                <?php else: ?>
-                                    <p class="text-muted">No recent student login records found.</p>
-                                <?php endif; ?>
-                            </div>
+                                            </section>
+                                            <?php
+                                        }
+                                        ?>
+
+                                        <?php
+                                        // Super Admins
+                                        $recent_admins_query = "SELECT * FROM sadmins ORDER BY last_login DESC LIMIT 10";
+                                        $recent_admins_result = $conn->query($recent_admins_query);
+                                        displayUserCards("Last Logged-In Admins", $recent_admins_result, 'sadmin', '../sadmin/');
+
+                                        // Lecturers
+                                        $recent_lectures_query = "SELECT * FROM lectures ORDER BY last_login DESC LIMIT 10";
+                                        $recent_lectures_result = $conn->query($recent_lectures_query);
+                                        displayUserCards("Last Logged-In Lecturers", $recent_lectures_result, 'lecture', '../lectures/');
+
+                                        // Batch Representatives
+                                        $recent_batchrep_query = "SELECT * FROM admins ORDER BY last_login DESC LIMIT 10";
+                                        $recent_batchrep_result = $conn->query($recent_batchrep_query);
+                                        displayUserCards("Last Logged-In Batch Representers", $recent_batchrep_result, 'admin', '../admin/');
+
+                                        // Students
+                                        $recent_students_query = "SELECT * FROM students ORDER BY last_login DESC LIMIT 20";
+                                        $recent_students_result = $conn->query($recent_students_query);
+                                        displayUserCards("Last 20 Logged-In Students", $recent_students_result, 'student', '../');
+                                        ?>
+
+
                         </div>
-                    </section>
+                    </div>
+                </div>
+            </div>
+        </section>
 
 
 
