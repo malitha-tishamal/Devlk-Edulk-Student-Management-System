@@ -141,46 +141,53 @@ $yearResult = $conn->query($yearQuery);
                   <?php
                   if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
-                      echo "<tr>";
-                      echo "<td>{$row['id']}</td>";
-                      echo "<td><img src='../{$row['profile_picture']}' width='40'></td>";
-                      echo "<td>{$row['name']}</td>";
-                      echo "<td>{$row['regno']}</td>";
-                      echo "<td>{$row['nic']}</td>";
-                      echo "<td>{$row['email']}</td>";
-                      echo "<td>{$row['gender']}</td>";
-                      echo "<td>{$row['address']}</td>";
-                      echo "<td>{$row['nowstatus']}</td>";
-                      echo "<td>{$row['mobile']}</td>";
-                      echo "<td>{$row['mobile2']}</td>";
-                      echo "<td>{$row['created_at']}</td>";
-                      echo "<td>{$row['last_login']}</td>";
+    $status = strtolower($row['status']);
+    echo "<tr>";
+    echo "<td>{$row['id']}</td>";
+    echo "<td><img src='../{$row['profile_picture']}' width='40'></td>";
+    echo "<td>{$row['name']}</td>";
+    echo "<td>{$row['regno']}</td>";
+    echo "<td>{$row['nic']}</td>";
+    echo "<td>{$row['email']}</td>";
+    echo "<td>{$row['gender']}</td>";
+    echo "<td>{$row['address']}</td>";
+    echo "<td>{$row['nowstatus']}</td>";
+    echo "<td>{$row['mobile']}</td>";
+    echo "<td>{$row['mobile2']}</td>";
+    echo "<td>{$row['created_at']}</td>";
+    echo "<td>{$row['last_login']}</td>";
 
-                      // Status Badge
-                      echo "<td>";
-                      switch (strtolower($row['status'])) {
-                        case 'active':
-                        case 'approved':
-                          echo "<span class='btn btn-success btn-sm w-100'>Approved</span>";
-                          break;
-                        case 'disabled':
-                          echo "<span class='btn btn-danger btn-sm w-100'>Disabled</span>";
-                          break;
-                        case 'pending':
-                          echo "<span class='btn btn-warning btn-sm w-100'>Pending</span>";
-                          break;
-                        default:
-                          echo "<span class='btn btn-secondary btn-sm w-100'>" . ucfirst($row['status']) . "</span>";
-                      }
-                      echo "</td>";
+    // Status Badge
+    echo "<td>";
+    switch ($status) {
+        case 'active':
+        case 'approved':
+            echo "<span class='btn btn-success btn-sm w-100'>Approved</span>";
+            break;
+        case 'disabled':
+        case 'rejected':
+            echo "<span class='btn btn-danger btn-sm w-100'>Disabled</span>";
+            break;
+        case 'pending':
+            echo "<span class='btn btn-warning btn-sm w-100'>Pending</span>";
+            break;
+        default:
+            echo "<span class='btn btn-secondary btn-sm w-100'>" . ucfirst($row['status']) . "</span>";
+    }
+    echo "</td>";
 
-                      echo "<td><button class='btn btn-success btn-sm w-100 approve-btn' data-id='{$row['id']}'>Approve</button></td>";
-                      echo "<td><button class='btn btn-warning btn-sm w-100 disable-btn' data-id='{$row['id']}'>Disable</button></td>";
-                      echo "<td><button class='btn btn-danger btn-sm w-100 delete-btn' data-id='{$row['id']}'>Delete</button></td>";
-                      echo "<td class='text-center'>
-                            <a href='edit-student.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm w-100'>Edit</a>
-                          </td>";
-                      echo "</tr>";
+    // Button disabled logic
+    $approve_disabled = ($status === 'active' || $status === 'approved') ? "disabled style='opacity: 0.5; pointer-events: none;'" : "";
+    $disable_disabled = ($status === 'disabled' || $status === 'rejected') ? "disabled style='opacity: 0.5; pointer-events: none;'" : "";
+
+    echo "<td><button class='btn btn-success btn-sm w-100 approve-btn' data-id='{$row['id']}' $approve_disabled>Approve</button></td>";
+    echo "<td><button class='btn btn-warning btn-sm w-100 disable-btn' data-id='{$row['id']}' $disable_disabled>Disable</button></td>";
+    echo "<td><button class='btn btn-danger btn-sm w-100 delete-btn' data-id='{$row['id']}'>Delete</button></td>";
+    echo "<td class='text-center'>
+            <a href='edit-student.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm w-100'>Edit</a>
+          </td>";
+    echo "</tr>";
+
                     }
                   } else {
                     echo "<tr><td colspan='15'>No students found.</td></tr>";

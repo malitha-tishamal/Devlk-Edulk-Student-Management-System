@@ -149,6 +149,12 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" href="pages-video-upload.php">
+                <i class="bi bi-file-play"></i> <span>Manage Videos</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" href="logout.php">
                 <i class="bi bi-box-arrow-right"></i> <span>Log Out</span>
             </a>
