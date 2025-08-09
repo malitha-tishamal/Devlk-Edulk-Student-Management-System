@@ -116,6 +116,25 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#course-nav" role="button">
+                <i class="bi bi-book"></i> <span>Course Content</span> <i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="course-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+                <li>
+                    <a href="pages-add-subject.php">
+                        <i class="bi bi-circle"></i> <span>add Subject</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="pages-courses.php">
+                        <i class="bi bi-circle"></i> <span>Manage Course Content</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#wards-nav2" role="button">
                <i class="bi bi-download"></i> <span>Downloads</span> <i class="bi bi-chevron-down ms-auto"></i>
             </a>

@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once '../includes/db-conn.php';
+include_once("auto_disable_expired_meetings.php");
+
 
 // Check login
 if (!isset($_SESSION['sadmin_id'])) {
@@ -204,11 +206,18 @@ echo "<p>Welcome, <strong>" . htmlspecialchars($user['name']) . "</strong></p>";
         <div class="d-flex flex-wrap gap-4 align-items-end">
           <div class="mb-3 flex-grow-1">
             <label>Status (Link Expiry)</label>
-            <select id="status" class="form-select">
+            <select id="link_expiry_status" class="form-select">
               <option value="permanent" selected>Permanent</option>
-              <option value="24h">Expire after 6h</option>
-              <option value="48h">Expire after 12h</option>
-              <option value="72h">Expire after 48h</option>
+              <option value="1h">Expire after 1h</option>
+              <option value="2h">Expire after 2h</option>
+              <option value="4h">Expire after 4h</option>
+              <option value="6h">Expire after 6h</option>
+              <option value="12h">Expire after 12h</option>
+              <option value="24h">Expire after 24h</option>
+              <option value="2d">Expire after 2d</option>
+              <option value="4d">Expire after 4d</option>
+              <option value="7d">Expire after 7d</option>
+              <option value="1m">Expire after 1m</option>
             </select>
           </div>
 
@@ -274,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const dateEl = document.getElementById("date");
   const startTimeEl = document.getElementById("startTime");
   const zoomLinkEl = document.getElementById("zoomLink");
-  const statusEl = document.getElementById("status");
+  const statusEl = document.getElementById("link_expiry_status"); // Updated ID here
   const subjectEl = document.getElementById("subject");
   const extractedDetails = document.getElementById("extractedDetails");
   const startMeetingBtn = document.getElementById("startMeetingBtn");
@@ -365,7 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const date = dateEl.value;
       const startTime = startTimeEl.value;
       const zoomLink = zoomLinkEl.value.trim();
-      const status = statusEl.value;
+      const link_expiry_status = statusEl.value;
       const subject = subjectEl.value;
       if (!title || !date || !startTime || !zoomLink || !subject) {
         saveStatus.innerHTML = '<div class="alert alert-warning">All fields must be filled.</div>';
@@ -377,7 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saveStatus.innerHTML = '<div class="alert alert-danger">Meeting is already expired. Cannot add.</div>';
         return;
       }
-      saveMeeting({ title, date, start_time: startTime, zoom_link: zoomLink, status, subject });
+      saveMeeting({ title, date, start_time: startTime, zoom_link: zoomLink, link_expiry_status, subject });
     });
   }
 

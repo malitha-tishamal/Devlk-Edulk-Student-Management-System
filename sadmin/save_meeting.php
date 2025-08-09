@@ -35,8 +35,9 @@ if (isset($_SESSION['sadmin_id'])) {
 
 // Validation
 if ($title && $date && $start_time && $zoom_link && $subject) {
-    $stmt = $conn->prepare("INSERT INTO meetings (title, date, start_time, zoom_link, created_by, role, status, subject, link_expiry_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssssssss", $title, $date, $start_time, $zoom_link, $user_name, $user_role, $status, $subject, $link_expiry_status);
+    $stmt = $conn->prepare("INSERT INTO meetings (title, date, start_time, zoom_link, created_by, role, status, subject, link_expiry_status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+$stmt->bind_param("sssssssss", $title, $date, $start_time, $zoom_link, $user_name, $user_role, $status, $subject, $link_expiry_status);
+
     
     if ($stmt->execute()) {
         echo json_encode(['success' => true]);
