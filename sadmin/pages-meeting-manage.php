@@ -162,6 +162,7 @@ echo "<p>Welcome, <strong>" . htmlspecialchars($user['name']) . "</strong></p>";
   </style>
 </head>
 <body>
+  <script src="live_meetings.js"></script>
 
 <?php include_once("../includes/header.php") ?>
 <?php include_once("../includes/sadmin-sidebar.php") ?>
@@ -430,8 +431,12 @@ document.addEventListener("DOMContentLoaded", () => {
   <td>
     ${
       isDisabled
-        ? `<button type="button" class="btn btn-primary btn-sm disabled-btn" disabled>Join</button>`
-        : `<a href="${row.zoom_link}" target="_blank"><button type="button" class="btn btn-primary btn-sm">Join</button></a>`
+        ? `<button type="button" class="btn btn-primary btn-sm disabled-btn" disabled>Start</button>`
+        : `<a href="${row.zoom_link}" target="_blank"><button class="btn btn-primary btn-sm start-live-btn" 
+        data-id="${row.id}" 
+        data-link="${row.zoom_link}">
+    <i class="fas fa-play"></i> Start
+</button>`
     }
   </td>
   <td>

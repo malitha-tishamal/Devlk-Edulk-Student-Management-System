@@ -79,7 +79,7 @@ if (isset($_POST['submit'])) {
                 } elseif ($table === 'lectures') {
                     $_SESSION['lecture_id'] = $user['id'];
                     $_SESSION['success_message'] = "Welcome Lecturer!";
-                    $redirect = "lectures/index.php";
+                    $redirect = "lectures/user-profile.php";
                 }
 
                 // Update last login timestamp
