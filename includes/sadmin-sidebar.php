@@ -122,7 +122,7 @@
             <ul id="course-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
                 <li>
                     <a href="pages-add-subject.php">
-                        <i class="bi bi-circle"></i> <span>add Subject</span>
+                        <i class="bi bi-circle"></i> <span>Add Subject</span>
                     </a>
                 </li>
 
