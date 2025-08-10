@@ -2,13 +2,13 @@
 session_start();
 require_once '../includes/db-conn.php';
 
-if (!isset($_SESSION['sadmin_id'])) {
+if (!isset($_SESSION['lecture_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
-$user_id = $_SESSION['sadmin_id'];
-$sql = "SELECT name, email, nic, mobile, profile_picture FROM sadmins WHERE id = ?";
+$user_id = $_SESSION['lecture_id'];
+$sql = "SELECT name, email, nic, mobile, profile_picture FROM lectures WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -21,16 +21,20 @@ $semQuery = $conn->query("SELECT DISTINCT semester FROM subjects ORDER BY semest
 while ($row = $semQuery->fetch_assoc()) {
     $semesters[] = $row['semester'];
 }
-$uploader_name = $user['name'];
-$uploader_role = 'admin'; 
 
 $selectedSemester = $_GET['semester'] ?? '';
 $selectedSubjectId = $_GET['subject'] ?? '';
 
 $subjects = [];
 if ($selectedSemester !== '') {
-    $subjectQuery = $conn->prepare("SELECT id, name FROM subjects WHERE semester = ? ORDER BY name ASC");
-    $subjectQuery->bind_param("s", $selectedSemester);
+    $subjectQuery = $conn->prepare("
+        SELECT s.id, s.name 
+        FROM subjects s
+        INNER JOIN lectures_assignment la ON la.subject_id = s.id
+        WHERE s.semester = ? AND la.lecturer_id = ?
+        ORDER BY s.name ASC
+    ");
+    $subjectQuery->bind_param("si", $selectedSemester, $user_id);
     $subjectQuery->execute();
     $resultSubjects = $subjectQuery->get_result();
     while ($row = $resultSubjects->fetch_assoc()) {
@@ -38,6 +42,7 @@ if ($selectedSemester !== '') {
     }
     $subjectQuery->close();
 }
+
 
 // Function for colored file icons by extension
 function getFileIconColored($ext) {
@@ -78,7 +83,7 @@ function getFileIconColored($ext) {
 </head>
 <body>
 <?php include_once("../includes/header.php") ?>
-<?php include_once("../includes/sadmin-sidebar.php") ?>
+<?php include_once("../includes/lectures-sidebar.php") ?>
 
 <main id="main" class="main">
     <div class="pagetitle">

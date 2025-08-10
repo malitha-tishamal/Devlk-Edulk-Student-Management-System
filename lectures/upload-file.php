@@ -2,7 +2,7 @@
 session_start();
 require_once '../includes/db-conn.php';
 
-if (!isset($_SESSION['sadmin_id'])) {
+if (!isset($_SESSION['lecture_id'])) {
     header("Location: ../index.php");
     exit();
 }
@@ -25,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Fetch uploader name and role from DB
-    $user_id = $_SESSION['sadmin_id'];
-    $stmtUser = $conn->prepare("SELECT name FROM sadmins WHERE id = ?");
+    $user_id = $_SESSION['lecture_id'];
+    $stmtUser = $conn->prepare("SELECT name FROM lectures WHERE id = ?");
     $stmtUser->bind_param("i", $user_id);
     $stmtUser->execute();
     $resUser = $stmtUser->get_result();
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmtUser->close();
 
     $uploader_name = $user['name'] ?? 'Unknown';
-    $uploader_role = 'admin'; // Set static role or fetch dynamically if you have it stored
+    $uploader_role = 'lecture'; // Set static role or fetch dynamically if you have it stored
 
     $uploadDir = '../uploads/';
     $uploadSuccessCount = 0;
