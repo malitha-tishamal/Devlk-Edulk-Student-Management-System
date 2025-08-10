@@ -121,7 +121,7 @@ $subjects_result = $conn->query("SELECT * FROM subjects");
                                             <option value="">Select Lecturer</option>
                                             <?php
                                             while ($row = $lecturers_result->fetch_assoc()) {
-                                                echo "<option value='" . $row['id'] . "'>" . $row['username'] . "</option>";
+                                                echo "<option value='" . $row['id'] . "'>" . $row['name'] . "</option>";
                                             }
                                             ?>
                                         </select>

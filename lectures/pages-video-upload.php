@@ -2,13 +2,13 @@
 session_start();
 require_once '../includes/db-conn.php';
 
-if (!isset($_SESSION['sadmin_id'])) {
+if (!isset($_SESSION['lecture_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
-$user_id = $_SESSION['sadmin_id'];
-$sql = "SELECT name, email, nic, mobile, profile_picture FROM sadmins WHERE id = ?";
+$user_id = $_SESSION['lecture_id'];
+$sql = "SELECT name, email, nic, mobile, profile_picture FROM lectures WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -16,32 +16,24 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
 
-// Fetch subject list
+// Fetch only assigned subjects for this lecturer
 $subjectList = [];
-$subjectQuery = $conn->query("SELECT id, name FROM subjects");
-while ($row = $subjectQuery->fetch_assoc()) {
+$subjectQuery = $conn->prepare("
+    SELECT s.id, s.name 
+    FROM subjects s
+    INNER JOIN lectures_assignment la ON s.id = la.subject_id
+    WHERE la.lecturer_id = ?
+");
+$subjectQuery->bind_param("i", $user_id);
+$subjectQuery->execute();
+$resultSubjects = $subjectQuery->get_result();
+
+while ($row = $resultSubjects->fetch_assoc()) {
     $subjectList[] = $row;
 }
+$subjectQuery->close();
 
-// Fetch videos with uploader name & role
-$videos = [];
-$videoQuery = $conn->query("
-    SELECT v.*,
-           CASE 
-               WHEN v.role = 'superadmin' THEN s.name
-               WHEN v.role = 'lecture' THEN l.name
-               ELSE 'Admin'
-           END AS uploader_name
-    FROM recordings v
-    LEFT JOIN sadmins s ON v.created_by = s.id AND v.role = 'superadmin'
-    LEFT JOIN lectures l ON v.created_by = l.id AND v.role = 'lecture'
-    ORDER BY v.release_time DESC
-");
-while ($row = $videoQuery->fetch_assoc()) {
-    $videos[] = $row;
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,7 +61,7 @@ while ($row = $videoQuery->fetch_assoc()) {
 <body>
 
 <?php include_once("../includes/header.php"); ?>
-<?php include_once("../includes/sadmin-sidebar.php"); ?>
+<?php include_once("../includes/lectures-sidebar.php"); ?>
 
 <main id="main" class="main">
     <div class="pagetitle">
@@ -100,9 +92,12 @@ while ($row = $videoQuery->fetch_assoc()) {
             <select name="subject_id" class="form-select" required>
               <option value="">-- Select Subject --</option>
               <?php foreach ($subjectList as $sub): ?>
-                <option value="<?= htmlspecialchars($sub['id']) ?>"><?= htmlspecialchars($sub['name']) ?></option>
+                  <option value="<?= htmlspecialchars($sub['id']) ?>">
+                      <?= htmlspecialchars($sub['name']) ?>
+                  </option>
               <?php endforeach; ?>
-            </select>
+          </select>
+
           </div>
           <div class="col-md-6">
             <label class="form-label">Title</label>
@@ -190,6 +185,7 @@ while ($row = $videoQuery->fetch_assoc()) {
                 Uploaded: <?= date("Y-m-d", strtotime($row['release_time'])) ?>
                 by <?= htmlspecialchars($row['uploader_name']) ?> (<?= htmlspecialchars($row['role']) ?>)
             </p>
+
               <button class="btn btn-sm btn-secondary mt-1" disabled>Play Count: <?= intval($row['play_count']) ?></button>
               <button class="btn btn-sm btn-secondary mt-1" disabled>Download Count: <?= intval($row['download_count']) ?></button>
 

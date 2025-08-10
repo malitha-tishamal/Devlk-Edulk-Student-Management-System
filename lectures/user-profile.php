@@ -85,7 +85,7 @@ $gender = isset($user['gender']) ? $user['gender'] : ''; // Use the fetched 'gen
     <?php endif; ?>
 
     <?php include_once ("../includes/header.php") ?>
-    <?php include_once ("../includes/sadmin-sidebar.php") ?>
+    <?php include_once ("../includes/lectures-sidebar.php") ?>
 
     <main id="main" class="main">
         <div class="pagetitle">
