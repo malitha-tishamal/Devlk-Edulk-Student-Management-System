@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmtUser->close();
 
     $uploader_name = $user['name'] ?? 'Unknown';
-    $uploader_role = 'lecture'; // Set static role or fetch dynamically if you have it stored
+    $uploader_role = 'lecture'; // Set static role or fetch dynamically if stored
 
     $uploadDir = '../uploads/';
     $uploadSuccessCount = 0;
@@ -52,8 +52,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $destination = $uploadDir . $uniqueName;
 
             if (move_uploaded_file($files['tmp_name'][$index], $destination)) {
-                $stmt = $conn->prepare("INSERT INTO tuition_files (title, subject_id, category, filename, status, uploaded_at, uploaded_by_name, uploaded_by_role) VALUES (?, ?, ?, ?, 'active', NOW(), ?, ?)");
-                $stmt->bind_param("sissss", $title, $subject_id, $category, $uniqueName, $uploader_name, $uploader_role);
+                $stmt = $conn->prepare("
+                    INSERT INTO tuition_files 
+                    (user_id, title, subject_id, category, filename, status, uploaded_at, uploaded_by_name, uploaded_by_role) 
+                    VALUES (?, ?, ?, ?, ?, 'active', NOW(), ?, ?)
+                ");
+                $stmt->bind_param(
+                    "isissss",
+                    $user_id,       // user_id
+                    $title,         // title
+                    $subject_id,    // subject_id
+                    $category,      // category
+                    $uniqueName,    // filename
+                    $uploader_name, // uploaded_by_name
+                    $uploader_role  // uploaded_by_role
+                );
                 $stmt->execute();
                 $stmt->close();
                 $uploadSuccessCount++;

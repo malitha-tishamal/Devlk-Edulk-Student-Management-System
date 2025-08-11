@@ -16,18 +16,6 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
 
-// Function to check if lecturer is assigned to a subject
-function isAssignedToSubject($conn, $lecturer_id, $subject_id) {
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM lectures_assignment 
-                           WHERE lecturer_id = ? AND subject_id = ?");
-    $stmt->bind_param("ii", $lecturer_id, $subject_id);
-    $stmt->execute();
-    $stmt->bind_result($count);
-    $stmt->fetch();
-    $stmt->close();
-    return $count > 0;
-}
-
 $semesters = [];
 $semQuery = $conn->query("SELECT DISTINCT semester FROM subjects ORDER BY semester ASC");
 while ($row = $semQuery->fetch_assoc()) {
@@ -39,14 +27,8 @@ $selectedSubjectId = $_GET['subject'] ?? '';
 
 $subjects = [];
 if ($selectedSemester !== '') {
-    $subjectQuery = $conn->prepare("
-        SELECT s.id, s.name 
-        FROM subjects s
-        INNER JOIN lectures_assignment la ON la.subject_id = s.id
-        WHERE s.semester = ? AND la.lecturer_id = ?
-        ORDER BY s.name ASC
-    ");
-    $subjectQuery->bind_param("si", $selectedSemester, $user_id);
+    $subjectQuery = $conn->prepare("SELECT id, name FROM subjects WHERE semester = ? ORDER BY name ASC");
+    $subjectQuery->bind_param("s", $selectedSemester);
     $subjectQuery->execute();
     $resultSubjects = $subjectQuery->get_result();
     while ($row = $resultSubjects->fetch_assoc()) {
@@ -54,7 +36,6 @@ if ($selectedSemester !== '') {
     }
     $subjectQuery->close();
 }
-
 
 // Function for colored file icons by extension
 function getFileIconColored($ext) {
@@ -81,7 +62,7 @@ function getFileIconColored($ext) {
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Manage Resources - Edulk</title>
+    <title>Download Resources - Edulk</title>
     <?php include_once("../includes/css-links-inc.php"); ?>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
     <style>
@@ -90,16 +71,6 @@ function getFileIconColored($ext) {
             color: #1a73e8;
             margin-top: 20px;
             margin-left: 15px;
-        }
-        .disabled-btn {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -152,7 +123,7 @@ function getFileIconColored($ext) {
                             </div>
                         </form>
 
-                        <h5 class="card-title">File Upload</h5>
+                        <!--h5 class="card-title">File Upload</h5>
                         <?php if ($selectedSemester !== ''): ?>
                             <form id="multiFileForm" class="mb-4" enctype="multipart/form-data">
                                 <input type="hidden" name="semester" value="<?= htmlspecialchars($selectedSemester) ?>">
@@ -196,7 +167,7 @@ function getFileIconColored($ext) {
                                          style="width: 0%;" id="progressBarText">0%
                                     </div>
                                 </div>
-                            </form>
+                            </form-->
 
                             <script>
                                 document.getElementById("addSectionBtn").addEventListener("click", function () {
@@ -260,22 +231,17 @@ function getFileIconColored($ext) {
                             <h5 class="card-title mt-4">Uploaded Files</h5>
 
                             <?php
-                            // Fetch subjects for this semester assigned to lecturer
+                            // Fetch subjects for this semester
                             $subjectGroupQuery = $conn->prepare("
                                 SELECT DISTINCT s.id, s.name 
                                 FROM tuition_files tf 
                                 JOIN subjects s ON tf.subject_id = s.id 
-                                INNER JOIN lectures_assignment la ON la.subject_id = s.id
-                                WHERE s.semester = ? AND la.lecturer_id = ?
+                                WHERE s.semester = ? 
                                 ORDER BY s.name ASC
                             ");
-                            $subjectGroupQuery->bind_param("si", $selectedSemester, $user_id);
+                            $subjectGroupQuery->bind_param("s", $selectedSemester);
                             $subjectGroupQuery->execute();
                             $subjectResult = $subjectGroupQuery->get_result();
-
-                            if ($subjectResult->num_rows === 0) {
-                                echo '<div class="alert alert-info">No files found for the selected semester.</div>';
-                            }
 
                             while ($subject = $subjectResult->fetch_assoc()):
                                 // If a specific subject is selected, skip others
@@ -295,10 +261,6 @@ function getFileIconColored($ext) {
                                     $stmtFiles->bind_param("i", $subject['id']);
                                     $stmtFiles->execute();
                                     $resultFiles = $stmtFiles->get_result();
-
-                                    if ($resultFiles->num_rows === 0) {
-                                        echo '<div class="alert alert-info">No files found for this subject.</div>';
-                                    }
 
                                     while ($file = $resultFiles->fetch_assoc()) {
                                         if (strtolower($file['category']) === 'notes' && preg_match('/^(Week\s*\d+)/i', $file['title'], $matches)) {
@@ -320,128 +282,187 @@ function getFileIconColored($ext) {
                                 foreach ($notesByWeek as $week => $files):
                                     ?>
                                     <h6 class="week-subheading"><?= htmlspecialchars($week) ?></h6>
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered mb-4">
-                                            <thead>
+                                    <table class="table table-bordered mb-4">
+                                        <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Category</th>
+                                            <th>Extension</th>
+                                            <th>Uploaded_at</th>
+                                            <th>File</th>
+                                            <th>Uploader Name</th>
+                                            <th>Uploader Role</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <?php foreach ($files as $f): 
+                                            $ext = pathinfo($f['filename'], PATHINFO_EXTENSION);
+                                            ?>
                                             <tr>
-                                                <th>Title</th>
-                                                <th>Category</th>
-                                                <th>Extension</th>
-                                                <th>Uploaded_at</th>
-                                                <th>File</th>
-                                                <th>Uploader Name</th>
-                                                <th>Uploader Role</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
+                                                <td><?= htmlspecialchars($f['title']) ?></td>
+                                                <td><?= htmlspecialchars($f['category']) ?></td>
+                                                <td><?= getFileIconColored($ext) . ' ' . strtoupper(htmlspecialchars($ext)) ?></td>
+                                                <td><?= htmlspecialchars($f['uploaded_at']) ?></td>
+                                                <td><a href="../uploads/<?= rawurlencode($f['filename']) ?>" target="_blank" rel="noopener">View</a></td>
+                                                <td><?= htmlspecialchars($f['uploaded_by_name']) ?></td>
+                                                <td><?= htmlspecialchars($f['uploaded_by_role']) ?></td>
+                                                <td><span class="badge bg-<?= $f['status'] === 'active' ? 'success' : 'secondary' ?>">
+                                                        <?= ucfirst(htmlspecialchars($f['status'])) ?>
+                                                    </span></td>
+                                                <?php
+// Check assignment
+$assignedToCurrentLecturer = false;
+$checkAssignStmt = $conn->prepare("
+    SELECT 1 
+    FROM lectures_assignment 
+    WHERE lecturer_id = ? AND subject_id = ?
+    LIMIT 1
+");
+$checkAssignStmt->bind_param("ii", $user_id, $subject['id']);
+$checkAssignStmt->execute();
+$assignedResult = $checkAssignStmt->get_result();
+if ($assignedResult->num_rows > 0) {
+    $assignedToCurrentLecturer = true;
+}
+$checkAssignStmt->close();
+?>
+
+...
+
+<td>
+<?php
+$isUploader = ($f['user_id'] == $user_id);
+
+if ($isUploader) {
+    // Case 1: Uploaded by current lecturer → All active
+    if ($f['status'] !== 'active') {
+        echo '<a href="change-file-status.php?id=' . $f['id'] . '&status=active&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-success">Activate</a> ';
+    }
+    if ($f['status'] !== 'inactive') {
+        echo '<a href="change-file-status.php?id=' . $f['id'] . '&status=inactive&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-secondary">Disable</a> ';
+    }
+    echo '<a href="delete-file.php?id=' . $f['id'] . '&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-danger" onclick="return confirm(\'Delete this file?\')">Delete</a>';
+}
+elseif ($assignedToCurrentLecturer) {
+    // Case 2: Assigned but not uploaded → Only Activate/Disable
+    $disableDeleteStyle = 'style="opacity:0.5;pointer-events:none;"';
+    if ($f['status'] !== 'active') {
+        echo '<a href="change-file-status.php?id=' . $f['id'] . '&status=active&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-success">Activate</a> ';
+    }
+    if ($f['status'] !== 'inactive') {
+        echo '<a href="change-file-status.php?id=' . $f['id'] . '&status=inactive&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-secondary">Disable</a> ';
+    }
+    echo '<a href="#" class="btn btn-sm btn-danger" ' . $disableDeleteStyle . '>Delete</a>';
+}
+else {
+    // Case 3: Not assigned and not uploader → All disabled
+    $disableAll = 'style="opacity:0.5;pointer-events:none;"';
+    echo '<a href="#" class="btn btn-sm btn-success" ' . $disableAll . '>Activate</a> ';
+    echo '<a href="#" class="btn btn-sm btn-secondary" ' . $disableAll . '>Disable</a> ';
+    echo '<a href="#" class="btn btn-sm btn-danger" ' . $disableAll . '>Delete</a>';
+}
+?>
+</td>
+
+
                                             </tr>
-                                            </thead>
-                                            <tbody>
-                                            <?php foreach ($files as $f): 
-                                                $ext = pathinfo($f['filename'], PATHINFO_EXTENSION);
-                                                $isOwner = ($f['user_id'] == $user_id);
-                                                $isAssigned = isAssignedToSubject($conn, $user_id, $f['subject_id']);
-                                                $canEdit = $isOwner || $isAssigned;
-                                                ?>
-                                                <tr>
-                                                    <td><?= htmlspecialchars($f['title']) ?></td>
-                                                    <td><?= htmlspecialchars($f['category']) ?></td>
-                                                    <td><?= getFileIconColored($ext) . ' ' . strtoupper(htmlspecialchars($ext)) ?></td>
-                                                    <td><?= htmlspecialchars($f['uploaded_at']) ?></td>
-                                                    <td><a href="../uploads/<?= rawurlencode($f['filename']) ?>" target="_blank" rel="noopener">View</a></td>
-                                                    <td><?= htmlspecialchars($f['uploaded_by_name']) ?></td>
-                                                    <td><?= htmlspecialchars($f['uploaded_by_role']) ?></td>
-                                                    <td><span class="badge bg-<?= $f['status'] === 'active' ? 'success' : 'secondary' ?>">
-                                                            <?= ucfirst(htmlspecialchars($f['status'])) ?>
-                                                        </span></td>
-                                                    <td>
-                                                        <div class="action-buttons">
-                                                            <?php if ($f['status'] !== 'active' && $canEdit): ?>
-                                                                <a href="change-file-status.php?id=<?= $f['id'] ?>&status=active&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-success">Activate</a>
-                                                            <?php elseif ($f['status'] !== 'active'): ?>
-                                                                <button class="btn btn-sm btn-success disabled-btn">Activate</button>
-                                                            <?php endif; ?>
-                                                            
-                                                            <?php if ($f['status'] !== 'inactive' && $canEdit): ?>
-                                                                <a href="change-file-status.php?id=<?= $f['id'] ?>&status=inactive&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-secondary">Disable</a>
-                                                            <?php elseif ($f['status'] !== 'inactive'): ?>
-                                                                <button class="btn btn-sm btn-secondary disabled-btn">Disable</button>
-                                                            <?php endif; ?>
-                                                            
-                                                            <?php if ($isOwner): ?>
-                                                                <a href="delete-file.php?id=<?= $f['id'] ?>&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this file?')">Delete</a>
-                                                            <?php else: ?>
-                                                                <button class="btn btn-sm btn-danger disabled-btn">Delete</button>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
                                 <?php endforeach; ?>
 
                                 <?php if (!empty($otherFiles)): ?>
                                     <h6 class="week-subheading">Other Files</h6>
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered mb-4">
-                                            <thead>
+                                    <table class="table table-bordered mb-4">
+                                        <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Category</th>
+                                            <th>Extension</th>
+                                            <th>Uploaded_at</th>
+                                            <th>File</th>
+                                            <th>Uploader Name</th>
+                                            <th>Uploader Role</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <?php foreach ($otherFiles as $f):
+                                            $ext = pathinfo($f['filename'], PATHINFO_EXTENSION);
+                                            ?>
                                             <tr>
-                                                <th>Title</th>
-                                                <th>Category</th>
-                                                <th>Extension</th>
-                                                <th>Uploaded_at</th>
-                                                <th>File</th>
-                                                <th>Uploader Name</th>
-                                                <th>Uploader Role</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <?php foreach ($otherFiles as $f):
-                                                $ext = pathinfo($f['filename'], PATHINFO_EXTENSION);
-                                                $isOwner = ($f['user_id'] == $user_id);
-                                                $isAssigned = isAssignedToSubject($conn, $user_id, $f['subject_id']);
-                                                $canEdit = $isOwner || $isAssigned;
+                                                <td><?= htmlspecialchars($f['title']) ?></td>
+                                                <td><?= htmlspecialchars($f['category']) ?></td>
+                                                <td><?= getFileIconColored($ext) . ' ' . strtoupper(htmlspecialchars($ext)) ?></td>
+                                                <td><?= htmlspecialchars($f['uploaded_at']) ?></td>
+                                                <td><a href="../uploads/<?= rawurlencode($f['filename']) ?>" target="_blank" rel="noopener">View</a></td>
+                                                <td><?= htmlspecialchars($f['uploaded_by_name']) ?></td>
+                                                <td><?= htmlspecialchars($f['uploaded_by_role']) ?></td>
+                                                <td><span class="badge bg-<?= $f['status'] === 'active' ? 'success' : 'secondary' ?>">
+                                                        <?= ucfirst(htmlspecialchars($f['status'])) ?>
+                                                    </span></td>
+                                                <?php
+                                                // Check assignment
+                                                $assignedToCurrentLecturer = false;
+                                                $checkAssignStmt = $conn->prepare("
+                                                    SELECT 1 
+                                                    FROM lectures_assignment 
+                                                    WHERE lecturer_id = ? AND subject_id = ?
+                                                    LIMIT 1
+                                                ");
+                                                $checkAssignStmt->bind_param("ii", $user_id, $subject['id']);
+                                                $checkAssignStmt->execute();
+                                                $assignedResult = $checkAssignStmt->get_result();
+                                                if ($assignedResult->num_rows > 0) {
+                                                    $assignedToCurrentLecturer = true;
+                                                }
+                                                $checkAssignStmt->close();
                                                 ?>
-                                                <tr>
-                                                    <td><?= htmlspecialchars($f['title']) ?></td>
-                                                    <td><?= htmlspecialchars($f['category']) ?></td>
-                                                    <td><?= getFileIconColored($ext) . ' ' . strtoupper(htmlspecialchars($ext)) ?></td>
-                                                    <td><?= htmlspecialchars($f['uploaded_at']) ?></td>
-                                                    <td><a href="../uploads/<?= rawurlencode($f['filename']) ?>" target="_blank" rel="noopener">View</a></td>
-                                                    <td><?= htmlspecialchars($f['uploaded_by_name']) ?></td>
-                                                    <td><?= htmlspecialchars($f['uploaded_by_role']) ?></td>
-                                                    <td><span class="badge bg-<?= $f['status'] === 'active' ? 'success' : 'secondary' ?>">
-                                                            <?= ucfirst(htmlspecialchars($f['status'])) ?>
-                                                        </span></td>
-                                                    <td>
-                                                        <div class="action-buttons">
-                                                            <?php if ($f['status'] !== 'active' && $canEdit): ?>
-                                                                <a href="change-file-status.php?id=<?= $f['id'] ?>&status=active&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-success">Activate</a>
-                                                            <?php elseif ($f['status'] !== 'active'): ?>
-                                                                <button class="btn btn-sm btn-success disabled-btn">Activate</button>
-                                                            <?php endif; ?>
-                                                            
-                                                            <?php if ($f['status'] !== 'inactive' && $canEdit): ?>
-                                                                <a href="change-file-status.php?id=<?= $f['id'] ?>&status=inactive&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-secondary">Disable</a>
-                                                            <?php elseif ($f['status'] !== 'inactive'): ?>
-                                                                <button class="btn btn-sm btn-secondary disabled-btn">Disable</button>
-                                                            <?php endif; ?>
-                                                            
-                                                            <?php if ($isOwner): ?>
-                                                                <a href="delete-file.php?id=<?= $f['id'] ?>&semester=<?= urlencode($selectedSemester) ?>&subject=<?= urlencode($selectedSubjectId) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this file?')">Delete</a>
-                                                            <?php else: ?>
-                                                                <button class="btn btn-sm btn-danger disabled-btn">Delete</button>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
+
+                                                ...
+
+                                                <td>
+                                                <?php
+                                                $isUploader = ($f['user_id'] == $user_id);
+
+                                                if ($isUploader) {
+                                                    // Case 1: Uploaded by current lecturer → All active
+                                                    if ($f['status'] !== 'active') {
+                                                        echo '<a href="change-file-status.php?id=' . $f['id'] . '&status=active&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-success">Activate</a> ';
+                                                    }
+                                                    if ($f['status'] !== 'inactive') {
+                                                        echo '<a href="change-file-status.php?id=' . $f['id'] . '&status=inactive&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-secondary">Disable</a> ';
+                                                    }
+                                                    echo '<a href="delete-file.php?id=' . $f['id'] . '&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-danger" onclick="return confirm(\'Delete this file?\')">Delete</a>';
+                                                }
+                                                elseif ($assignedToCurrentLecturer) {
+                                                    // Case 2: Assigned but not uploaded → Only Activate/Disable
+                                                    $disableDeleteStyle = 'style="opacity:0.5;pointer-events:none;"';
+                                                    if ($f['status'] !== 'active') {
+                                                        echo '<a href="change-file-status.php?id=' . $f['id'] . '&status=active&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-success">Activate</a> ';
+                                                    }
+                                                    if ($f['status'] !== 'inactive') {
+                                                        echo '<a href="change-file-status.php?id=' . $f['id'] . '&status=inactive&semester=' . urlencode($selectedSemester) . '&subject=' . urlencode($selectedSubjectId) . '" class="btn btn-sm btn-secondary">Disable</a> ';
+                                                    }
+                                                    echo '<a href="#" class="btn btn-sm btn-danger" ' . $disableDeleteStyle . '>Delete</a>';
+                                                }
+                                                else {
+                                                    // Case 3: Not assigned and not uploader → All disabled
+                                                    $disableAll = 'style="opacity:0.5;pointer-events:none;"';
+                                                    echo '<a href="#" class="btn btn-sm btn-success" ' . $disableAll . '>Activate</a> ';
+                                                    echo '<a href="#" class="btn btn-sm btn-secondary" ' . $disableAll . '>Disable</a> ';
+                                                    echo '<a href="#" class="btn btn-sm btn-danger" ' . $disableAll . '>Delete</a>';
+                                                }
+                                                ?>
+                                                </td>
+
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
                                 <?php endif; ?>
 
                             <?php endwhile; $subjectGroupQuery->close(); ?>

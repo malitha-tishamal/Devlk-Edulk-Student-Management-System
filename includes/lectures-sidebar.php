@@ -94,7 +94,12 @@
             <ul id="wards-nav2" class="nav-content collapse" data-bs-parent="#sidebar-nav">
                 <li>
                     <a href="manage-files.php">
-                        <i class="bi bi-circle"></i> <span>Add  / Manage</span>
+                        <i class="bi bi-circle"></i> <span>Upload / Manage</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pages-download-files.php">
+                        <i class="bi bi-circle"></i> <span>Download Files</span>
                     </a>
                 </li>
                 
