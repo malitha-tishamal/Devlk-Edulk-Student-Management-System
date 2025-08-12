@@ -148,6 +148,30 @@
             </ul>
         </li>
 
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#meetings-nav" role="button">
+               <i class="bi bi-people-fill"></i> <span>Meetings</span> <i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="meetings-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+                <li>
+                    <a href="pages-meeting-manage-sadmin.php">
+                        <i class="bi bi-circle"></i> <span>Add New Meeting</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pages-meeting-manage-all.php">
+                        <i class="bi bi-circle"></i> <span>All Saved Meetings</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#.php">
+                        <i class="bi bi-circle"></i> <span>Meeting Attendance</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
 
         <li class="nav-item">
             <a class="nav-link collapsed" href="user-profile.php">
@@ -158,12 +182,6 @@
         <li class="nav-item">
             <a class="nav-link collapsed" href="pages-sadmin-drive.php">
                 <i class="bi bi-hdd"></i> <span>My Drive</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="pages-meeting-manage.php">
-                <i class="bi bi-people-fill"></i> <span>Meetings</span>
             </a>
         </li>
 

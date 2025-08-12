@@ -419,7 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   // ----- Meeting List & Actions -----
   function loadMeetings() {
-    fetch("get_meetings.php")
+    fetch("get_meetings-user.php")
       .then((res) => res.json())
       .then((data) => {
         const tbody = document.getElementById("meetingTableBody");

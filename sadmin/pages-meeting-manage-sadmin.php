@@ -5,14 +5,14 @@ include_once("auto_disable_expired_meetings.php");
 
 
 // Check login
-if (!isset($_SESSION['lecture_id'])) {
+if (!isset($_SESSION['sadmin_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
 // Get logged-in user details
-$user_id = $_SESSION['lecture_id'];
-$stmt = $conn->prepare("SELECT name, email, nic, mobile, profile_picture FROM lectures WHERE id = ?");
+$user_id = $_SESSION['sadmin_id'];
+$stmt = $conn->prepare("SELECT name, email, nic, mobile, profile_picture FROM sadmins WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -225,30 +225,19 @@ echo "<p>Welcome, <strong>" . htmlspecialchars($user['name']) . "</strong></p>";
           <div class="mb-3 flex-grow-1">
             <label for="subject">Select Subject</label>
             <select id="subject" name="subject" class="form-select" required>
-                <option value="">-- Select Subject --</option>
-                <?php
-                    $subject_sql = "
-                        SELECT s.code, s.name 
-                        FROM lectures_assignment la
-                        INNER JOIN subjects s ON la.subject_id = s.id
-                        WHERE la.lecturer_id = ?
-                    ";
-                    $stmt = $conn->prepare($subject_sql);
-                    $stmt->bind_param("i", $user_id);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    
-                    while ($subject = $result->fetch_assoc()) {
-                        $value = $subject['code'] . ' - ' . $subject['name'];
-                        echo "<option value='" . htmlspecialchars($value, ENT_QUOTES) . "'>$value</option>";
-                    }
-
-                    $stmt->close();
-                ?>
+              <option value="">-- Select Subject --</option>
+              <?php
+                $subject_sql = "SELECT code, name FROM subjects";
+                $subject_result = $conn->query($subject_sql);
+                while ($subject = $subject_result->fetch_assoc()) {
+                    $value = $subject['code'] . ' - ' . $subject['name'];
+                    echo "<option value='" . htmlspecialchars($value, ENT_QUOTES) . "'>$value</option>";
+                }
+              ?>
             </select>
+          </div>
         </div>
 
-        </div>
         <button id="startMeetingBtn" class="btn btn-primary mt-3">Start Meeting</button>
         <button id="addMeetingBtn" class="btn btn-success mt-3 ms-2">Add Meeting</button>
         <button type="button" id="clearBtn" class="btn btn-danger mt-3 ms-2">Clear</button>
@@ -259,7 +248,7 @@ echo "<p>Welcome, <strong>" . htmlspecialchars($user['name']) . "</strong></p>";
 
   <div class="card">
     <div class="card-body">
-      <h5 class="card-title">Saved Meetings</h5>
+      <h5 class="card-title">Your Saved Meetings</h5>
       <table class="table table-bordered" id="meetingTable">
         <thead>
           <tr>
@@ -417,9 +406,11 @@ document.addEventListener("DOMContentLoaded", () => {
       updateUI(data);
     });
   }
+
   // ----- Meeting List & Actions -----
+
   function loadMeetings() {
-    fetch("get_meetings.php")
+    fetch("get_meetings_user.php")
       .then((res) => res.json())
       .then((data) => {
         const tbody = document.getElementById("meetingTableBody");
@@ -617,6 +608,7 @@ function loadResources(meetingId) {
     });
 }
 
+
   // Event delegation for resource toggle, delete and chat send
   document.body.addEventListener("click", (e) => {
     if (e.target.classList.contains("toggle-resource-btn")) {
@@ -712,10 +704,14 @@ function loadResources(meetingId) {
       });
   }
 
+  // Auto-refresh chat every 5 seconds if chat open (optional)
+  // Could add a global interval for open resource chats if desired
+
   loadMeetings();
 });
 
 </script>
+
 
 </body>
 </html>
