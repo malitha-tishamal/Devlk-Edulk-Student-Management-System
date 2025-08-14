@@ -155,7 +155,11 @@ session_start();
                                         </div>
 
                                         <div class="col-12">
-                                          <p class="small mb-0">Are You Student an account? <a href="pages-signup.php">Log in</a></p>
+                                          <p class="small mb-0">Are You Student ? <a href="pages-signup.php">Create an account</a></p>
+                                        </div>
+
+                                        <div class="col-12">
+                                          <p class="small mb-0" style="font-size:14px;">Are you Batch Representer? <a href="pages-batchadmin-signup.php">Create an account</a></p>
                                         </div>
                                       </form>
                                 </div>

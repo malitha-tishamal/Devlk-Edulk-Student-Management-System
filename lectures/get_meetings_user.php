@@ -2,22 +2,29 @@
 session_start();
 require_once '../includes/db-conn.php';
 
-if (!isset($_SESSION['sadmin_id'])) {
+// Check if lecturer is logged in
+if (empty($_SESSION['lecture_id'])) {
     echo json_encode([]);
     exit();
 }
 
-// Get logged-in admin's name
-$stmt = $conn->prepare("SELECT name FROM sadmins WHERE id = ?");
-$stmt->bind_param("i", $_SESSION['sadmin_id']);
+// Get logged-in lecturer's name
+$stmt = $conn->prepare("SELECT name FROM lectures WHERE id = ?");
+$stmt->bind_param("i", $_SESSION['lecture_id']);
 $stmt->execute();
 $result = $stmt->get_result();
-$admin = $result->fetch_assoc();
-$admin_name = $admin['name'] ?? '';
+$lecturer = $result->fetch_assoc();
+
+if (!$lecturer) {
+    echo json_encode([]);
+    exit();
+}
+
+$lecturer_name = $lecturer['name'];
 
 $data = [];
 
-// Fetch meetings created by this admin
+// Fetch meetings created by this lecturer
 $query = "
     SELECT * 
     FROM meetings 
@@ -25,7 +32,7 @@ $query = "
     ORDER BY date DESC, start_time DESC
 ";
 $stmt2 = $conn->prepare($query);
-$stmt2->bind_param("s", $admin_name);
+$stmt2->bind_param("s", $lecturer_name);
 $stmt2->execute();
 $res2 = $stmt2->get_result();
 
@@ -34,5 +41,8 @@ while ($row = $res2->fetch_assoc()) {
 }
 
 echo json_encode($data);
+
+$stmt->close();
+$stmt2->close();
 $conn->close();
 ?>

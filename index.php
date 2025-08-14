@@ -77,7 +77,7 @@ date_default_timezone_set('Asia/Colombo');
 
                                     <form action="login-process.php" method="POST" class="row g-3 needs-validation" novalidate>
                                         <div class="col-12">
-                                            <label for="yourUsername" class="form-label">Username</label>
+                                            <label for="yourUsername" class="form-label">Email</label>
                                             <div class="input-group has-validation">
                                                 <span class="input-group-text" id="inputGroupPrepend">@</span>
                                                 <input type="text" name="email" class="form-control" id="yourUsername" required>
@@ -105,12 +105,18 @@ date_default_timezone_set('Asia/Colombo');
                                         </div>
 
                                          <div class="col-12">
-                                          <p class="small mb-0" style="font-size:14px;">Don't have account? <a href="pages-signup.php">Create an account</a></p>
+                                          <p class="small mb-0" style="font-size:14px;">Don't have Student account? <a href="pages-signup.php">Create an account</a></p>
+                                        </div>
+
+                                        <div class="col-12">
+                                          <p class="small mb-0" style="font-size:14px;">Are you Batch Representer? <a href="pages-batchadmin-signup.php">Create an account</a></p>
                                         </div>
 
                                         <div class="col-12">
                                           <p class="small mb-0" style="font-size:14px;">Are you Lecturer? <a href="pages-lecture-signup.php">Create an account</a></p>
                                         </div>
+
+                                        
 
                                         <div class="col-12">
                                          <p>Don't have an account? <a href="guest_view.php?semester=Semester+I&subject=" class="btn btn-outline-primary btn-sm">Continue as Guest</a></p>

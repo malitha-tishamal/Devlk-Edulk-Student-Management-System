@@ -3,29 +3,25 @@ session_start();
 require_once '../includes/db-conn.php';
 include_once("auto_disable_expired_meetings.php");
 
-
 // Check login
 if (!isset($_SESSION['lecture_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
-// Get logged-in user details
 $user_id = $_SESSION['lecture_id'];
 $stmt = $conn->prepare("SELECT name, email, nic, mobile, profile_picture FROM lectures WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
-$user = $result->fetch_assoc(); // ✅ $user now available for profile picture, etc.
+$user = $result->fetch_assoc(); 
 $stmt->close();
 
-// Set response to JSON if handling AJAX
+$currentUserName = $user['name']; // Get current user's name
+
 if (isset($_GET['action'])) {
     header('Content-Type: application/json; charset=utf-8');
 
-    // ---------------------------
-    // Fetch chat messages
-    // ---------------------------
     if ($_GET['action'] === 'get_chat') {
         $meeting_id = intval($_GET['meeting_id'] ?? 0);
         $messages = [];
@@ -40,10 +36,6 @@ if (isset($_GET['action'])) {
         echo json_encode($messages);
         exit();
     }
-
-    // ---------------------------
-    // Fetch meeting resources
-    // ---------------------------
     if ($_GET['action'] === 'get_resources') {
         $meeting_id = intval($_GET['meeting_id'] ?? 0);
         if ($meeting_id <= 0) {
@@ -65,9 +57,6 @@ if (isset($_GET['action'])) {
     }
 }
 
-// ---------------------------
-// Send chat message
-// ---------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_chat') {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -90,16 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
     exit();
 }
 
-// ---------------------------
-// Normal page rendering (HTML or UI use)
-// ---------------------------
-
 header('Content-Type: text/html; charset=utf-8');
 
-// You can still use $user for header/profile
-// Example:
 echo "<p>Welcome, <strong>" . htmlspecialchars($user['name']) . "</strong></p>";
-// or render your HTML UI here
+
 
 ?>
 
@@ -178,88 +161,10 @@ echo "<p>Welcome, <strong>" . htmlspecialchars($user['name']) . "</strong></p>";
       </nav>
     </div>
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <h4 class="card-title mt-3">Paste Zoom Invitation</h4>
-      <textarea id="zoomInvite" class="form-control mb-3" rows="6" placeholder="Paste Zoom invitation here..."></textarea>
-
-      <div id="extractedDetails" style="display:none;">
-        <div class="mb-3">
-          <label>Meeting Title</label>
-          <input type="text" id="title" class="form-control" readonly>
-        </div>
-        <div class="row mb-3">
-          <div class="col">
-            <label>Date</label>
-            <input type="date" id="date" class="form-control" readonly>
-          </div>
-          <div class="col">
-            <label>Start Time</label>
-            <input type="time" id="startTime" class="form-control" readonly>
-          </div>
-        </div>
-        <div class="mb-3">
-          <label>Zoom Link</label>
-          <input type="text" id="zoomLink" class="form-control" readonly />
-          <span id="expiredLabel" class="expired-label" style="display:none;">Meeting Expired</span>
-        </div>
-
-        <div class="d-flex flex-wrap gap-4 align-items-end">
-          <div class="mb-3 flex-grow-1">
-            <label>Status (Link Expiry)</label>
-            <select id="link_expiry_status" class="form-select">
-              <option value="permanent" selected>Permanent</option>
-              <option value="1h">Expire after 1h</option>
-              <option value="2h">Expire after 2h</option>
-              <option value="4h">Expire after 4h</option>
-              <option value="6h">Expire after 6h</option>
-              <option value="12h">Expire after 12h</option>
-              <option value="24h">Expire after 24h</option>
-              <option value="2d">Expire after 2d</option>
-              <option value="4d">Expire after 4d</option>
-              <option value="7d">Expire after 7d</option>
-              <option value="1m">Expire after 1m</option>
-            </select>
-          </div>
-
-          <div class="mb-3 flex-grow-1">
-            <label for="subject">Select Subject</label>
-            <select id="subject" name="subject" class="form-select" required>
-                <option value="">-- Select Subject --</option>
-                <?php
-                    $subject_sql = "
-                        SELECT s.code, s.name 
-                        FROM lectures_assignment la
-                        INNER JOIN subjects s ON la.subject_id = s.id
-                        WHERE la.lecturer_id = ?
-                    ";
-                    $stmt = $conn->prepare($subject_sql);
-                    $stmt->bind_param("i", $user_id);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    
-                    while ($subject = $result->fetch_assoc()) {
-                        $value = $subject['code'] . ' - ' . $subject['name'];
-                        echo "<option value='" . htmlspecialchars($value, ENT_QUOTES) . "'>$value</option>";
-                    }
-
-                    $stmt->close();
-                ?>
-            </select>
-        </div>
-
-        </div>
-        <button id="startMeetingBtn" class="btn btn-primary mt-3">Start Meeting</button>
-        <button id="addMeetingBtn" class="btn btn-success mt-3 ms-2">Add Meeting</button>
-        <button type="button" id="clearBtn" class="btn btn-danger mt-3 ms-2">Clear</button>
-        <div id="saveStatus" class="mt-3"></div>
-      </div>
-    </div>
-  </div>
 
   <div class="card">
     <div class="card-body">
-      <h5 class="card-title">Your Saved Meetings</h5>
+      <h5 class="card-title">All Saved Meetings</h5>
       <table class="table table-bordered" id="meetingTable">
         <thead>
           <tr>
@@ -289,6 +194,8 @@ echo "<p>Welcome, <strong>" . htmlspecialchars($user['name']) . "</strong></p>";
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+
+  const currentUserName = <?php echo json_encode($currentUserName); ?>;
   // Elements for Zoom Invite parsing UI (if present)
   const zoomInviteEl = document.getElementById("zoomInvite");
   const titleEl = document.getElementById("title");
@@ -304,103 +211,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const addMeetingBtn = document.getElementById("addMeetingBtn");
   const clearBtn = document.getElementById("clearBtn");
 
-  if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      zoomInviteEl.value = "";
-      titleEl.value = "";
-      dateEl.value = "";
-      startTimeEl.value = "";
-      zoomLinkEl.value = "";
-      statusEl.value = "permanent";
-      subjectEl.value = "";
-      extractedDetails.style.display = "none";
-      saveStatus.innerHTML = "";
-    });
-  }
-
-  function parseZoomInvite(text) {
-    const titleMatch = text.match(/Topic:\s*(.+)/i);
-    const title = titleMatch ? titleMatch[1].trim() : "";
-    const timeMatch = text.match(/Time:\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})\s+(\d{1,2}:\d{2})\s*(AM|PM)/i);
-    let date = "",
-      startTime = "";
-    if (timeMatch) {
-      const [_, dateStr, timeStr, ampm] = timeMatch;
-      const dt = new Date(`${dateStr} ${timeStr} ${ampm}`);
-      if (!isNaN(dt.getTime())) {
-        date = dt.toISOString().split("T")[0];
-        const hours = dt.getHours().toString().padStart(2, "0");
-        const minutes = dt.getMinutes().toString().padStart(2, "0");
-        startTime = `${hours}:${minutes}`;
-      }
-    }
-    const linkMatch = text.match(/https:\/\/[^\s]*zoom\.us\/[^\s]+/i);
-    const zoomLink = linkMatch ? linkMatch[0].trim() : "";
-    return { title, date, startTime, zoomLink };
-  }
-
-  function updateUI(data) {
-    if (data.title && data.date && data.startTime && data.zoomLink) {
-      extractedDetails.style.display = "block";
-      titleEl.value = data.title;
-      dateEl.value = data.date;
-      startTimeEl.value = data.startTime;
-      zoomLinkEl.value = data.zoomLink;
-      const meetingStart = new Date(`${data.date}T${data.startTime}`);
-      const now = new Date();
-      if (now > meetingStart) {
-        startMeetingBtn.classList.add("disabled-btn");
-        expiredLabel.style.display = "inline";
-      } else {
-        startMeetingBtn.classList.remove("disabled-btn");
-        expiredLabel.style.display = "none";
-      }
-    } else {
-      extractedDetails.style.display = "none";
-    }
-  }
-
-  function saveMeeting(data) {
-    fetch("save_meeting.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(data),
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success) {
-          saveStatus.innerHTML = '<div class="alert alert-success">Meeting added successfully</div>';
-          loadMeetings();
-        } else {
-          saveStatus.innerHTML = `<div class="alert alert-danger">Failed to save: ${res.message}</div>`;
-        }
-      })
-      .catch(() => {
-        saveStatus.innerHTML = '<div class="alert alert-danger">Error saving meeting.</div>';
-      });
-  }
-
-  if (addMeetingBtn) {
-    addMeetingBtn.addEventListener("click", () => {
-      const title = titleEl.value.trim();
-      const date = dateEl.value;
-      const startTime = startTimeEl.value;
-      const zoomLink = zoomLinkEl.value.trim();
-      const link_expiry_status = statusEl.value;
-      const subject = subjectEl.value;
-      if (!title || !date || !startTime || !zoomLink || !subject) {
-        saveStatus.innerHTML = '<div class="alert alert-warning">All fields must be filled.</div>';
-        return;
-      }
-      const meetingStart = new Date(`${date}T${startTime}`);
-      const now = new Date();
-      if (now > meetingStart) {
-        saveStatus.innerHTML = '<div class="alert alert-danger">Meeting is already expired. Cannot add.</div>';
-        return;
-      }
-      saveMeeting({ title, date, start_time: startTime, zoom_link: zoomLink, link_expiry_status, subject });
-    });
-  }
 
   if (startMeetingBtn) {
     startMeetingBtn.addEventListener("click", () => {
@@ -419,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   // ----- Meeting List & Actions -----
   function loadMeetings() {
-    fetch("get_meetings_user.php")
+    fetch("get_meetings.php")
       .then((res) => res.json())
       .then((data) => {
         const tbody = document.getElementById("meetingTableBody");
@@ -427,6 +237,10 @@ document.addEventListener("DOMContentLoaded", () => {
         data.forEach((row) => {
           const isDisabled = row.status === "disabled" || row.status === "expired";
           const subjectLabel = row.subject_name ?? row.subject ?? "-";
+          
+          // ADDED: Check if current user created this meeting
+          const isCurrentUserCreator = (row.created_by === currentUserName);
+          
           tbody.innerHTML += `
 <tr data-id="${row.id}">
   <td>${row.title}</td>
@@ -445,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
         data-id="${row.id}" 
         data-link="${row.zoom_link}">
     <i class="fas fa-play"></i> Start
-</button>`
+</button></a>`
     }
   </td>
   <td>
@@ -455,7 +269,13 @@ document.addEventListener("DOMContentLoaded", () => {
     <button class="btn btn-warning btn-sm action-btn ${
       row.status === "disabled" ? "disabled-btn" : ""
     }" data-action="disable" ${row.status === "disabled" ? "disabled" : ""}>Disable</button>
-    <button class="btn btn-danger btn-sm action-btn" data-action="delete">Delete</button>
+    
+    <!-- MODIFIED: Delete button with conditional disabling -->
+    <button class="btn btn-danger btn-sm action-btn ${!isCurrentUserCreator ? 'disabled-btn' : ''}" 
+            data-action="delete" ${!isCurrentUserCreator ? 'disabled' : ''}>
+        Delete
+    </button>
+    
     <button class="btn btn-info btn-sm resources-btn" data-id="${row.id}">Resources & Chat</button>
   </td>
 </tr>
