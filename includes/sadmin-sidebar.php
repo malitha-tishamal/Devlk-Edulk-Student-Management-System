@@ -172,6 +172,30 @@
             </ul>
         </li>
 
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#video-nav" role="button">
+               <i class="bi bi-file-play"></i> <span>Recordings</span> <i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="video-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+                <li>
+                    <a href="pages-video-upload-user.php">
+                        <i class="bi bi-circle"></i> <span>Manage Uploaded Videos</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pages-video-upload.php">
+                        <i class="bi bi-circle"></i> <span>All Video Uploads</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#.php">
+                        <i class="bi bi-circle"></i> <span>#</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
 
         <li class="nav-item">
             <a class="nav-link collapsed" href="user-profile.php">
@@ -182,12 +206,6 @@
         <li class="nav-item">
             <a class="nav-link collapsed" href="pages-sadmin-drive.php">
                 <i class="bi bi-hdd"></i> <span>My Drive</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="pages-video-upload.php">
-                <i class="bi bi-file-play"></i> <span>Manage Videos</span>
             </a>
         </li>
 

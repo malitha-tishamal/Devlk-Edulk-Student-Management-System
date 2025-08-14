@@ -178,6 +178,32 @@ while ($row = $videoQuery->fetch_assoc()) {
         endif;
       ?>
         <div class="col-md-3 mb-3">
+
+          <?php
+    // Determine uploader name based on created_by and role
+    $uploader_name = 'Unknown';
+
+    if ($row['role'] === 'superadmin') {
+        $stmtUploader = $conn->prepare("SELECT name FROM sadmins WHERE id = ?");
+    } elseif ($row['role'] === 'lecture') {
+        $stmtUploader = $conn->prepare("SELECT name FROM lectures WHERE id = ?");
+    } else {
+        $stmtUploader = null;
+    }
+
+    if ($stmtUploader) {
+        $stmtUploader->bind_param("i", $row['created_by']);
+        $stmtUploader->execute();
+        $resultUploader = $stmtUploader->get_result();
+        if ($resultUploader->num_rows > 0) {
+            $uploaderRow = $resultUploader->fetch_assoc();
+            $uploader_name = $uploaderRow['name'];
+        }
+        $stmtUploader->close();
+    }
+    ?>
+
+
           <div class="card video-card <?= ($row['status'] === 'disabled') ? 'disabled' : '' ?>" data-video="<?= htmlspecialchars($row['video_path']) ?>" data-id="<?= $row['id'] ?>">
             <?php if (!empty($row['thumbnail_path'])): ?>
               <img src="../<?= htmlspecialchars($row['thumbnail_path']) ?>" class="card-img-top" style="height:160px; object-fit:cover;">
@@ -188,10 +214,11 @@ while ($row = $videoQuery->fetch_assoc()) {
               <h3 class="card-title mb-1" style=" white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($row['title']) ?></h3>
               <p class="text-muted mb-0" style="font-size:12px;">
                 Uploaded: <?= date("Y-m-d", strtotime($row['release_time'])) ?>
-                by <?= htmlspecialchars($row['uploader_name']) ?> (<?= htmlspecialchars($row['role']) ?>)
+                by <?= htmlspecialchars($uploader_name) ?> (<?= htmlspecialchars($row['role']) ?>)
             </p>
               <button class="btn btn-sm btn-secondary mt-1" disabled>Play Count: <?= intval($row['play_count']) ?></button>
               <button class="btn btn-sm btn-secondary mt-1" disabled>Download Count: <?= intval($row['download_count']) ?></button>
+
 
               <?php
 
