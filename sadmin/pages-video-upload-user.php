@@ -164,180 +164,173 @@ while ($row = $videoQuery->fetch_assoc()) {
     </div>
   </div>
 
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <h5 class="card-title">Uploaded Recordings</h5>
-      <?php
-      $recordings = $conn->query("SELECT r.*, s.name AS subject_name FROM recordings r JOIN subjects s ON r.subject_id = s.id ORDER BY release_time DESC");
-      $current_subject = null;
-      while ($row = $recordings->fetch_assoc()):
-        if ($current_subject !== $row['subject_name']):
-          if ($current_subject !== null) echo "</div>";
-          echo "<h4 class='mt-2 text-primary mb-3'>" . htmlspecialchars($row['subject_name']) . "</h4><div class='row'>";
-          $current_subject = $row['subject_name'];
-        endif;
-      ?>
-        <div class="col-md-3 mb-3">
+  <!-- Uploaded Recordings -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Your Uploaded Recordings</h5>
 
-          <?php
-    // Determine uploader name based on created_by and role
-    $uploader_name = 'Unknown';
+            <?php
+            $session_user_id = $_SESSION['lecture_id'] ?? $_SESSION['sadmin_id'] ?? null;
+            $session_role = isset($_SESSION['lecture_id']) ? 'lecture' : 'superadmin';
 
-    if ($row['role'] === 'superadmin') {
-        $stmtUploader = $conn->prepare("SELECT name FROM sadmins WHERE id = ?");
-    } elseif ($row['role'] === 'lecture') {
-        $stmtUploader = $conn->prepare("SELECT name FROM lectures WHERE id = ?");
-    } else {
-        $stmtUploader = null;
-    }
+            if ($session_user_id) {
+                $stmt = $conn->prepare("
+                    SELECT r.*, s.name AS subject_name 
+                    FROM recordings r 
+                    JOIN subjects s ON r.subject_id = s.id 
+                    WHERE r.role = ? AND r.created_by = ?
+                    ORDER BY r.release_time DESC
+                ");
+                $stmt->bind_param("si", $session_role, $session_user_id);
+                $stmt->execute();
+                $recordings = $stmt->get_result();
 
-    if ($stmtUploader) {
-        $stmtUploader->bind_param("i", $row['created_by']);
-        $stmtUploader->execute();
-        $resultUploader = $stmtUploader->get_result();
-        if ($resultUploader->num_rows > 0) {
-            $uploaderRow = $resultUploader->fetch_assoc();
-            $uploader_name = $uploaderRow['name'];
-        }
-        $stmtUploader->close();
-    }
-    ?>
+                $current_subject = null;
+                while ($row = $recordings->fetch_assoc()) {
 
+                    // Group by subject
+                    if ($current_subject !== $row['subject_name']) {
+                        if ($current_subject !== null) echo "</div>";
+                        echo "<h4 class='mt-2 text-primary mb-3'>" . htmlspecialchars($row['subject_name']) . "</h4><div class='row'>";
+                        $current_subject = $row['subject_name'];
+                    }
 
-          <div class="card video-card <?= ($row['status'] === 'disabled') ? 'disabled' : '' ?>" data-video="<?= htmlspecialchars($row['video_path']) ?>" data-id="<?= $row['id'] ?>">
-            <?php if (!empty($row['thumbnail_path'])): ?>
-              <img src="../<?= htmlspecialchars($row['thumbnail_path']) ?>" class="card-img-top" style="height:160px; object-fit:cover;">
-            <?php else: ?>
-              <video src="stream-video.php?file=<?= urlencode(basename($row['video_path'])) ?>" style="height:160px; object-fit:cover;" muted></video>
-            <?php endif; ?>
-            <div class="card-body">
-              <h3 class="card-title mb-1" style=" white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($row['title']) ?></h3>
-              <p class="text-muted mb-0" style="font-size:12px;">
-                Uploaded: <?= date("Y-m-d", strtotime($row['release_time'])) ?>
-                by <?= htmlspecialchars($uploader_name) ?> (<?= htmlspecialchars($row['role']) ?>)
-            </p>
-              <button class="btn btn-sm btn-secondary mt-1" disabled>Play Count: <?= intval($row['play_count']) ?></button>
-              <button class="btn btn-sm btn-secondary mt-1" disabled>Download Count: <?= intval($row['download_count']) ?></button>
+                    // Uploader name
+                    $uploader_name = 'Unknown';
+                    if ($row['role'] === 'superadmin') {
+                        $stmtUploader = $conn->prepare("SELECT name FROM sadmins WHERE id = ?");
+                    } elseif ($row['role'] === 'lecture') {
+                        $stmtUploader = $conn->prepare("SELECT name FROM lectures WHERE id = ?");
+                    } else {
+                        $stmtUploader = null;
+                    }
 
+                    if ($stmtUploader) {
+                        $stmtUploader->bind_param("i", $row['created_by']);
+                        $stmtUploader->execute();
+                        $resultUploader = $stmtUploader->get_result();
+                        if ($resultUploader->num_rows > 0) {
+                            $uploaderRow = $resultUploader->fetch_assoc();
+                            $uploader_name = $uploaderRow['name'];
+                        }
+                        $stmtUploader->close();
+                    }
+                    ?>
 
-              <?php
+                    <div class="col-md-3 mb-3">
+                        <div class="card video-card <?= ($row['status'] === 'disabled') ? 'disabled' : '' ?>" data-video="<?= htmlspecialchars($row['video_path']) ?>" data-id="<?= $row['id'] ?>">
+                            <?php if (!empty($row['thumbnail_path'])) { ?>
+                                <img src="../<?= htmlspecialchars($row['thumbnail_path']) ?>" class="card-img-top" style="height:160px; object-fit:cover;">
+                            <?php } else { ?>
+                                <video src="stream-video.php?file=<?= urlencode(basename($row['video_path'])) ?>" style="height:160px; object-fit:cover;" muted></video>
+                            <?php } ?>
 
-              $resources = $conn->prepare("SELECT * FROM recording_resources WHERE recording_id = ?");
-              $resources->bind_param("i", $row['id']);
-              $resources->execute();
-              $resResult = $resources->get_result(); 
+                            <div class="card-body">
+                                <h3 class="card-title mb-1" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($row['title']) ?></h3>
+                                <p class="text-muted mb-0" style="font-size:12px;">
+                                    Uploaded: <?= date("Y-m-d", strtotime($row['release_time'])) ?>
+                                    by <?= htmlspecialchars($uploader_name) ?> (<?= htmlspecialchars($row['role']) ?>)
+                                </p>
+                                <button class="btn btn-sm btn-secondary mt-1" disabled>Play Count: <?= intval($row['play_count']) ?></button>
+                                <button class="btn btn-sm btn-secondary mt-1" disabled>Download Count: <?= intval($row['download_count']) ?></button>
 
-                      ?>
+                                <?php
+                                // Resources
+                                $resources = $conn->prepare("SELECT * FROM recording_resources WHERE recording_id = ?");
+                                $resources->bind_param("i", $row['id']);
+                                $resources->execute();
+                                $resResult = $resources->get_result();
+                                ?>
 
+                                <div class="flex-grow-1 overflow-auto" style="max-height: 280px;">
+                                    <div class="text-primary mt-2">Resources </div>
+                                    <?php
+                                    if ($resResult->num_rows === 0) {
+                                        echo '<p class="text-muted">No resources added.</p>';
+                                    } else {
+                                        while ($res = $resResult->fetch_assoc()) { ?>
+                                            <div id="resource-card-<?= $res['id'] ?>" class="d-flex align-items-center justify-content-between p-1 mb-1 mt-1 border rounded resource-card <?= ($res['status'] ?? '') === 'disabled' ? 'disabled' : '' ?>">
+                                                <div class="d-flex align-items-center gap-3 flex-grow-1">
+                                                    <div class="resource-icon">
+                                                        <?php if (($res['type'] ?? '') === 'file') { ?>
+                                                            <i class="fa-solid fa-file-arrow-down"></i>
+                                                        <?php } elseif (($res['type'] ?? '') === 'link') { ?>
+                                                            <i class="fa-solid fa-link"></i>
+                                                        <?php } else { ?>
+                                                            <i class="fa-solid fa-question"></i>
+                                                        <?php } ?>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold"><?= htmlspecialchars($res['title'] ?? 'No Title') ?></div>
+                                                        <small class="text-muted">Uploaded at: <?= htmlspecialchars($res['uploaded_at'] ?? 'Unknown') ?></small>
+                                                    </div>
+                                                </div>
 
-              <div class="flex-grow-1 overflow-auto" style="max-height: 280px;">
-                <div class="text-primary mt-2">Resources </div>
-                  <?php if ($resResult->num_rows === 0): ?>
-                    <p class="text-muted">No resources added.</p>
-                  <?php else: while ($res = $resResult->fetch_assoc()): ?>
-                    <div id="resource-card-<?= $res['id'] ?>" class="d-flex align-items-center justify-content-between p-1 mb-1 mt-1 border rounded resource-card <?= ($res['status'] ?? '') === 'disabled' ? 'disabled' : '' ?>">
-                      <div class="d-flex align-items-center gap-3 flex-grow-1">
-                        <div class="resource-icon">
-                          <?php if (($res['type'] ?? '') === 'file'): ?>
-                            <i class="fa-solid fa-file-arrow-down"></i>
-                          <?php elseif (($res['type'] ?? '') === 'link'): ?>
-                            <i class="fa-solid fa-link"></i>
-                          <?php else: ?>
-                            <i class="fa-solid fa-question"></i>
-                          <?php endif; ?>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <?php if (($res['type'] ?? '') === 'file' && !empty($res['file_path'])) { ?>
+                                                        <a href="../<?= htmlspecialchars($res['file_path']) ?>" target="_blank" download class="btn btn-outline-primary btn-sm">Download</a>
+                                                    <?php } elseif (($res['type'] ?? '') === 'link' && !empty($res['link_url'])) { ?>
+                                                        <a href="<?= htmlspecialchars($res['link_url']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">Visit</a>
+                                                    <?php } else { ?>
+                                                        <span class="text-muted fst-italic">Unavailable</span>
+                                                    <?php } ?>
+                                                </div>
+                                            </div>
+                                    <?php }
+                                    } ?>
+                                </div>
+
+                                <!-- Add Resource Button -->
+                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="event.stopPropagation(); toggleResourceForm(<?= $row['id'] ?>)">Add Resource</button>
+                                <!-- Resource Upload Form -->
+                                <div id="resourceForm-<?= $row['id'] ?>" class="resource-form" style="display:none;">
+                                    <form onsubmit="return uploadResource(event, <?= $row['id'] ?>)">
+                                        <div class="mb-2">
+                                            <input type="text" name="title" placeholder="Resource title" required class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="mb-2">
+                                            <select name="type" onchange="toggleResourceInput(this, <?= $row['id'] ?>)" class="form-select form-select-sm" required>
+                                                <option value="">Select type</option>
+                                                <option value="file">File</option>
+                                                <option value="link">Link</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-2" id="fileInputContainer-<?= $row['id'] ?>" style="display:none;">
+                                            <input type="file" name="resource_file" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="mb-2" id="linkInputContainer-<?= $row['id'] ?>" style="display:none;">
+                                            <input type="url" name="link_url" placeholder="https://example.com" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="progress mb-2" style="height: 20px; display:none;" id="uploadProgress-<?= $row['id'] ?>">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-success">Upload Resource</button>
+                                    </form>
+                                    <div id="resourceMessage-<?= $row['id'] ?>" class="resource-message"></div>
+                                </div>
+
+                            </div>
+
+                            <div class="d-flex flex-wrap justify-content-between mt-1 align-items-center">
+                                <button class="btn btn-sm btn-success me-1" onclick="event.stopPropagation(); updateStatus(<?= $row['id'] ?>, 'active', this)" <?= ($row['status'] === 'active') ? 'disabled' : '' ?>>Activate</button>
+                                <button class="btn btn-sm btn-warning me-1" onclick="event.stopPropagation(); updateStatus(<?= $row['id'] ?>, 'disabled', this)" <?= ($row['status'] === 'disabled') ? 'disabled' : '' ?>>Disable</button>
+                                <button class="btn btn-sm btn-primary me-1" onclick="event.stopPropagation(); openEditModal(<?= $row['id'] ?>)">Edit</button>
+                                <button class="btn btn-sm btn-info me-1" onclick="event.stopPropagation(); downloadVideo('<?= htmlspecialchars($row['video_path']) ?>', <?= $row['id'] ?>, this)">Download</button>
+                                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteRecording(<?= $row['id'] ?>)">Delete</button>
+                            </div>
                         </div>
-                        <div>
-                          <div class="fw-semibold"><?= htmlspecialchars($res['title'] ?? 'No Title') ?></div>
-                          <small class="text-muted">Uploaded at: <?= htmlspecialchars($res['uploaded_at'] ?? 'Unknown') ?></small>
-                        </div>
-                      </div>
-
-                      <div class="d-flex align-items-center gap-2">
-                        <?php if (($res['type'] ?? '') === 'file' && !empty($res['file_path'])): ?>
-                          <a href="../<?= htmlspecialchars($res['file_path']) ?>" target="_blank" download class="btn btn-outline-primary btn-sm">
-                            Download
-                          </a>
-                        <?php elseif (($res['type'] ?? '') === 'link' && !empty($res['link_url'])): ?>
-                          <a href="<?= htmlspecialchars($res['link_url']) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                          Visit
-                          </a>
-                        <?php else: ?>
-                          <span class="text-muted fst-italic">Unavailable</span>
-                        <?php endif; ?>
-
-                        <button onclick="toggleResourceStatus(<?= $res['id'] ?>)" title="Toggle Active/Disable" class="btn btn-sm btn-warning">
-                          <?= ($res['status'] ?? '') === 'disabled' ? 'Enable' : 'Disable' ?>
-                        </button>
-
-                        <button onclick="deleteResource(<?= $res['id'] ?>)" title="Delete Resource" class="btn btn-sm btn-danger">
-                          Delete
-                        </button>
-                      </div>
                     </div>
-                  <?php endwhile; endif; ?>
-                </div>
 
-                <style>
-                  .resource-card.disabled {
-                    opacity: 0.5;
-                  }
-                  .resource-icon {
-                    font-size: 1.6rem;
-                    color: #0d6efd;
-                    width: 30px;
-                    text-align: center;
-                  }
-                 
-                </style>
+                <?php } // end while recordings
 
-              <!-- Add Resource Button -->
-              <button class="btn btn-sm btn-outline-primary mt-2" onclick="event.stopPropagation(); toggleResourceForm(<?= $row['id'] ?>)">Add Resource</button>
+                if ($current_subject !== null) echo "</div>"; // close last subject row
+            }
+            ?>
 
-              <!-- Resource Upload Form (hidden initially) -->
-              <div id="resourceForm-<?= $row['id'] ?>" class="resource-form" style="display:none;">
-                <form onsubmit="return uploadResource(event, <?= $row['id'] ?>)">
-                  <div class="mb-2">
-                    <input type="text" name="title" placeholder="Resource title" required class="form-control form-control-sm" />
-                  </div>
-                  <div class="mb-2">
-                    <select name="type" onchange="toggleResourceInput(this, <?= $row['id'] ?>)" class="form-select form-select-sm" required>
-                      <option value="">Select type</option>
-                      <option value="file">File</option>
-                      <option value="link">Link</option>
-                    </select>
-                  </div>
-                  <div class="mb-2" id="fileInputContainer-<?= $row['id'] ?>" style="display:none;">
-                    <input type="file" name="resource_file" class="form-control form-control-sm" />
-                  </div>
-                  <div class="mb-2" id="linkInputContainer-<?= $row['id'] ?>" style="display:none;">
-                    <input type="url" name="link_url" placeholder="https://example.com" class="form-control form-control-sm" />
-                  </div>
-
-                  <div class="progress mb-2" style="height: 20px; display:none;" id="uploadProgress-<?= $row['id'] ?>">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100">0%</div>
-                  </div>
-
-
-                  <button type="submit" class="btn btn-sm btn-success">Upload Resource</button>
-                </form>
-                <div id="resourceMessage-<?= $row['id'] ?>" class="resource-message"></div>
-              </div>
-            </div>
-
-
-            <div class="d-flex flex-wrap justify-content-between mt-1 align-items-center">
-              <button class="btn btn-sm btn-success me-1" onclick="event.stopPropagation(); updateStatus(<?= $row['id'] ?>, 'active', this)" <?= ($row['status'] === 'active') ? 'disabled' : '' ?>>Activate</button>
-              <button class="btn btn-sm btn-warning me-1" onclick="event.stopPropagation(); updateStatus(<?= $row['id'] ?>, 'disabled', this)" <?= ($row['status'] === 'disabled') ? 'disabled' : '' ?>>Disable</button>
-              <button class="btn btn-sm btn-primary me-1" onclick="event.stopPropagation(); openEditModal(<?= $row['id'] ?>)">Edit</button>
-              <button class="btn btn-sm btn-info me-1" onclick="event.stopPropagation(); downloadVideo('<?= htmlspecialchars($row['video_path']) ?>', <?= $row['id'] ?>, this)">Download</button>
-              <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteRecording(<?= $row['id'] ?>)">Delete</button>
-            </div>
-          </div>
         </div>
-      <?php endwhile; if ($current_subject !== null) echo "</div>"; ?>
     </div>
-  </div>
 </main>
+
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">

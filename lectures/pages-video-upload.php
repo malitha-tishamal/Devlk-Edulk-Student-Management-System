@@ -16,24 +16,32 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
 
-// Fetch only assigned subjects for this lecturer
+// Fetch subject list
 $subjectList = [];
-$subjectQuery = $conn->prepare("
-    SELECT s.id, s.name 
-    FROM subjects s
-    INNER JOIN lectures_assignment la ON s.id = la.subject_id
-    WHERE la.lecturer_id = ?
-");
-$subjectQuery->bind_param("i", $user_id);
-$subjectQuery->execute();
-$resultSubjects = $subjectQuery->get_result();
-
-while ($row = $resultSubjects->fetch_assoc()) {
+$subjectQuery = $conn->query("SELECT id, name FROM subjects");
+while ($row = $subjectQuery->fetch_assoc()) {
     $subjectList[] = $row;
 }
-$subjectQuery->close();
 
+// Fetch videos with uploader name & role
+$videos = [];
+$videoQuery = $conn->query("
+    SELECT v.*,
+           CASE 
+               WHEN v.role = 'superadmin' THEN s.name
+               WHEN v.role = 'lecture' THEN l.name
+               ELSE 'Admin'
+           END AS uploader_name
+    FROM recordings v
+    LEFT JOIN sadmins s ON v.created_by = s.id AND v.role = 'superadmin'
+    LEFT JOIN lectures l ON v.created_by = l.id AND v.role = 'lecture'
+    ORDER BY v.release_time DESC
+");
+while ($row = $videoQuery->fetch_assoc()) {
+    $videos[] = $row;
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,6 +64,11 @@ $subjectQuery->close();
     .video-card .btn { min-width: 70px; margin-bottom: 4px; }
     .resource-form { border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 4px; background: #f9f9f9; }
     .resource-message { margin-top: 8px; font-size: 0.9em; }
+    .disabled-btn {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -81,87 +94,9 @@ $subjectQuery->close();
   }
   ?>
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Video Upload</h5>
-      <form id="uploadForm" action="upload-recording-process.php" method="POST" enctype="multipart/form-data">
-        <!-- existing upload form fields here -->
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Subject</label>
-            <select name="subject_id" class="form-select" required>
-              <option value="">-- Select Subject --</option>
-              <?php foreach ($subjectList as $sub): ?>
-                  <option value="<?= htmlspecialchars($sub['id']) ?>">
-                      <?= htmlspecialchars($sub['name']) ?>
-                  </option>
-              <?php endforeach; ?>
-          </select>
-
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Title</label>
-            <input type="text" name="title" class="form-control" required />
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Description</label>
-            <textarea name="description" class="form-control" rows="3"></textarea>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Lecture Type</label>
-            <select name="lecture_type" class="form-select">
-              <option value="Zoom">Zoom Session Record</option>
-              <option value="physical">Physical Lecture Record</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Access</label>
-            <select name="access_level" class="form-select">
-              <option value="public">Public</option>
-              <option value="batch">Batch Only</option>
-              <option value="private">Private</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Thumbnail</label>
-            <input type="file" name="thumbnail" accept="image/*" class="form-control" onchange="previewThumbnail(event)">
-            <img id="thumbPreview" src="#" style="display:none; max-height: 100px; margin-top: 10px;" />
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Video File (MP4)</label>
-            <input type="file" name="video_file" accept="video/mp4" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Student View Limit</label>
-            <input type="number" name="view_limit_minutes" class="form-control" placeholder="e.g. 3 (views)">
-          </div>
-        </div>
-
-        <div class="progress mb-3" id="progressContainer" style="display:none;">
-          <div class="progress-bar" id="progressBar">0%</div>
-        </div>
-
-        <div>
-          <button type="submit" class="btn btn-primary">Upload</button>
-          <button type="button" id="clearBtn" class="btn btn-secondary ms-2">Clear</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <div class="card shadow-sm">
     <div class="card-body">
-      <h5 class="card-title">Uploaded Recordings</h5>
+      <h5 class="card-title">All Uploaded Recordings</h5>
       <?php
       $recordings = $conn->query("SELECT r.*, s.name AS subject_name FROM recordings r JOIN subjects s ON r.subject_id = s.id ORDER BY release_time DESC");
       $current_subject = null;
@@ -171,8 +106,40 @@ $subjectQuery->close();
           echo "<h4 class='mt-2 text-primary mb-3'>" . htmlspecialchars($row['subject_name']) . "</h4><div class='row'>";
           $current_subject = $row['subject_name'];
         endif;
+        
+        // Determine if current user is the owner
+        $isOwner = false;
+        if ($row['role'] === 'lecture' && $row['created_by'] == $user_id) {
+            $isOwner = true;
+        }
       ?>
         <div class="col-md-3 mb-3">
+
+          <?php
+          // Determine uploader name based on created_by and role
+          $uploader_name = 'Unknown';
+
+          if ($row['role'] === 'superadmin') {
+              $stmtUploader = $conn->prepare("SELECT name FROM sadmins WHERE id = ?");
+          } elseif ($row['role'] === 'lecture') {
+              $stmtUploader = $conn->prepare("SELECT name FROM lectures WHERE id = ?");
+          } else {
+              $stmtUploader = null;
+          }
+
+          if ($stmtUploader) {
+              $stmtUploader->bind_param("i", $row['created_by']);
+              $stmtUploader->execute();
+              $resultUploader = $stmtUploader->get_result();
+              if ($resultUploader->num_rows > 0) {
+                  $uploaderRow = $resultUploader->fetch_assoc();
+                  $uploader_name = $uploaderRow['name'];
+              }
+              $stmtUploader->close();
+          }
+          ?>
+
+
           <div class="card video-card <?= ($row['status'] === 'disabled') ? 'disabled' : '' ?>" data-video="<?= htmlspecialchars($row['video_path']) ?>" data-id="<?= $row['id'] ?>">
             <?php if (!empty($row['thumbnail_path'])): ?>
               <img src="../<?= htmlspecialchars($row['thumbnail_path']) ?>" class="card-img-top" style="height:160px; object-fit:cover;">
@@ -183,20 +150,18 @@ $subjectQuery->close();
               <h3 class="card-title mb-1" style=" white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($row['title']) ?></h3>
               <p class="text-muted mb-0" style="font-size:12px;">
                 Uploaded: <?= date("Y-m-d", strtotime($row['release_time'])) ?>
-                by <?= htmlspecialchars($row['uploader_name']) ?> (<?= htmlspecialchars($row['role']) ?>)
+                by <?= htmlspecialchars($uploader_name) ?> (<?= htmlspecialchars($row['role']) ?>)
             </p>
-
               <button class="btn btn-sm btn-secondary mt-1" disabled>Play Count: <?= intval($row['play_count']) ?></button>
               <button class="btn btn-sm btn-secondary mt-1" disabled>Download Count: <?= intval($row['download_count']) ?></button>
 
-              <?php
 
+              <?php
               $resources = $conn->prepare("SELECT * FROM recording_resources WHERE recording_id = ?");
               $resources->bind_param("i", $row['id']);
               $resources->execute();
               $resResult = $resources->get_result(); 
-
-                      ?>
+              ?>
 
 
               <div class="flex-grow-1 overflow-auto" style="max-height: 280px;">
@@ -260,7 +225,11 @@ $subjectQuery->close();
                 </style>
 
               <!-- Add Resource Button -->
-              <button class="btn btn-sm btn-outline-primary mt-2" onclick="event.stopPropagation(); toggleResourceForm(<?= $row['id'] ?>)">Add Resource</button>
+              <button class="btn btn-sm btn-outline-primary mt-2 <?= !$isOwner ? 'disabled-btn' : '' ?>" 
+                <?= !$isOwner ? 'disabled' : '' ?> 
+                onclick="<?= $isOwner ? 'event.stopPropagation(); toggleResourceForm('.$row['id'].')' : 'return false' ?>">
+            Add Resource
+        </button>
 
               <!-- Resource Upload Form (hidden initially) -->
               <div id="resourceForm-<?= $row['id'] ?>" class="resource-form" style="display:none;">
@@ -295,11 +264,34 @@ $subjectQuery->close();
 
 
             <div class="d-flex flex-wrap justify-content-between mt-1 align-items-center">
-              <button class="btn btn-sm btn-success me-1" onclick="event.stopPropagation(); updateStatus(<?= $row['id'] ?>, 'active', this)" <?= ($row['status'] === 'active') ? 'disabled' : '' ?>>Activate</button>
-              <button class="btn btn-sm btn-warning me-1" onclick="event.stopPropagation(); updateStatus(<?= $row['id'] ?>, 'disabled', this)" <?= ($row['status'] === 'disabled') ? 'disabled' : '' ?>>Disable</button>
-              <button class="btn btn-sm btn-primary me-1" onclick="event.stopPropagation(); openEditModal(<?= $row['id'] ?>)">Edit</button>
-              <button class="btn btn-sm btn-info me-1" onclick="event.stopPropagation(); downloadVideo('<?= htmlspecialchars($row['video_path']) ?>', <?= $row['id'] ?>, this)">Download</button>
-              <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteRecording(<?= $row['id'] ?>)">Delete</button>
+              <button class="btn btn-sm btn-success me-1 <?= (!$isOwner || $row['status'] === 'active') ? 'disabled-btn' : '' ?>" 
+                    <?= (!$isOwner || $row['status'] === 'active') ? 'disabled' : '' ?> 
+                    onclick="<?= $isOwner ? 'event.stopPropagation(); updateStatus('.$row['id'].', \'active\', this)' : 'return false' ?>">
+                Activate
+            </button>
+            
+            <button class="btn btn-sm btn-warning me-1 <?= (!$isOwner || $row['status'] === 'disabled') ? 'disabled-btn' : '' ?>" 
+                    <?= (!$isOwner || $row['status'] === 'disabled') ? 'disabled' : '' ?> 
+                    onclick="<?= $isOwner ? 'event.stopPropagation(); updateStatus('.$row['id'].', \'disabled\', this)' : 'return false' ?>">
+                Disable
+            </button>
+            
+            <button class="btn btn-sm btn-primary me-1 <?= !$isOwner ? 'disabled-btn' : '' ?>" 
+                    <?= !$isOwner ? 'disabled' : '' ?> 
+                    onclick="<?= $isOwner ? 'event.stopPropagation(); openEditModal('.$row['id'].')' : 'return false' ?>">
+                Edit
+            </button>
+            
+            <button class="btn btn-sm btn-info me-1" 
+                    onclick="event.stopPropagation(); downloadVideo('<?= htmlspecialchars($row['video_path']) ?>', <?= $row['id'] ?>, this)">
+                Download
+            </button>
+            
+            <button class="btn btn-sm btn-danger <?= !$isOwner ? 'disabled-btn' : '' ?>" 
+                    <?= !$isOwner ? 'disabled' : '' ?> 
+                    onclick="<?= $isOwner ? 'event.stopPropagation(); deleteRecording('.$row['id'].')' : 'return false' ?>">
+                Delete
+            </button>
             </div>
           </div>
         </div>
