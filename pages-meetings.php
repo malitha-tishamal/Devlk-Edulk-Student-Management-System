@@ -179,7 +179,7 @@ body {
 </div>
 </main>
 
-<?php include_once("includes/footer2.php") ?>
+<?php include_once("includes/footer.php") ?>
 <?php include_once("includes/js-links-inc.php") ?>
 
 <script>

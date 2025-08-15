@@ -26,6 +26,12 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" href="pages-meetings.php">
+                <i class="bi bi-people-fill"></i> <span>Meetings</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" href="pages-user-drive.php">
                 <i class="bi bi-hdd"></i> <span>My Drive</span>
             </a>

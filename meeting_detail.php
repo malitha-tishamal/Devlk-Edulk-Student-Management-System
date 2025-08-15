@@ -635,13 +635,22 @@ body {
                 </div>
             </div>
 
+            <style>
+                .join-btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+            </style>
+
             <a href="<?= ($meeting['status'] === 'active' && $meeting['is_live'] == 1) ? htmlspecialchars($meeting['zoom_link']) : '#' ?>"
-               class="join-btn <?= ($meeting['status'] !== 'active' || $meeting['is_live'] != 1) ? 'disabled' : '' ?>"
-               target="<?= ($meeting['status'] === 'active' && $meeting['is_live'] == 1) ? '_blank' : '_self' ?>"
-               <?= ($meeting['status'] !== 'active' || $meeting['is_live'] != 1) ? 'disabled' : '' ?>>
-                <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                <?= ($meeting['status'] === 'active' && $meeting['is_live'] == 1) ? 'Join Meeting Now' : 'Meeting Not Live' ?>
-            </a>
+   class="join-btn <?= ($meeting['status'] !== 'active' || $meeting['is_live'] != 1) ? 'disabled' : '' ?>"
+   target="<?= ($meeting['status'] === 'active' && $meeting['is_live'] == 1) ? '_blank' : '_self' ?>"
+   <?= ($meeting['status'] !== 'active' || $meeting['is_live'] != 1) ? 'disabled' : '' ?>>
+    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+    <?= ($meeting['status'] === 'active' && $meeting['is_live'] == 1) ? 'Join Meeting Now' : 'Meeting Not Start Yet' ?>
+</a>
+
         </div>
 
         <div class="flex-container">
@@ -822,9 +831,14 @@ refreshJoinButton();
 // Auto-refresh
 setInterval(loadChat, 5000);
 setInterval(refreshJoinButton, 10000);
+// Auto refresh full page every 10 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+
 </script>
 
-<?php include_once("includes/footer2.php"); ?>
+<?php include_once("includes/footer.php"); ?>
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 <?php include_once("includes/js-links-inc.php"); ?>
 
