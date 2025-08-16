@@ -446,7 +446,7 @@ $recordingQuery->close();
                     <?php if (count($subjectList) > 0): ?>
                         <?php foreach ($subjectList as $subject): ?>
                             <div class="subject-card <?= $selected_subject == $subject['id'] ? 'active' : '' ?>" 
-                                 onclick="window.location.href='subject-recordings.php?subject=<?= $subject['id'] ?>'">
+                                 onclick="window.location.href='subject-recordings-guest.php?subject=<?= $subject['id'] ?>'">
                                  <i class="fa-solid fa-book" style=" font-size: 60px; color: blue;"></i> 
                                 <div class="code"><?= htmlspecialchars($subject['code']) ?></div>
                                 <div class="name"><?= htmlspecialchars($subject['name']) ?></div>
@@ -472,7 +472,7 @@ $recordingQuery->close();
     <script>
         function filterBySemester(semester) {
             const subjectId = "<?= $selected_subject ?>";
-            let url = 'pages-lecture-recordings.php?';
+            let url = 'pages-lecture-recordings-guest.php?';
             
             if (semester) {
                 url += 'semester=' + encodeURIComponent(semester);
@@ -488,7 +488,7 @@ $recordingQuery->close();
         
         function filterBySubject(subjectId) {
             const semester = "<?= $selected_semester ?>";
-            let url = 'pages-lecture-recordings.php?';
+            let url = 'pages-lecture-recordings-guest.php?';
             
             if (semester) {
                 url += 'semester=' + encodeURIComponent(semester) + '&';

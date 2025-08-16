@@ -497,13 +497,13 @@ function getFileIcon($ext) {
         }
 
         .no-files h3 {
-            font-size: 1.8rem;
+            font-size: 1.rem;
             margin-bottom: 15px;
             color: var(--primary);
         }
 
         .no-files p {
-            font-size: 1.1rem;
+            font-size: 1rem;
             max-width: 500px;
             margin: 0 auto;
         }
@@ -511,7 +511,7 @@ function getFileIcon($ext) {
         .section-title {
             font-weight: 700;
             color: white;
-            margin-bottom: 25px;
+            margin-bottom: 10px;
             padding: 12px 20px;
             background: linear-gradient(90deg, var(--warning), #ff7b00);
             border-radius: 30px;
@@ -587,7 +587,7 @@ function getFileIcon($ext) {
             .filters-container {
                 flex-direction: column;
                 gap: 20px;
-                padding: 20px;
+                padding: 10px;
             }
             
             .filter-group {
@@ -599,15 +599,15 @@ function getFileIcon($ext) {
             }
             
             .subject-name {
-                font-size: 1.5rem;
+                font-size: 1rem;
             }
             
             .week-section, .subject-card {
-                padding: 20px;
+                padding: 10px;
             }
             
             .page-title {
-                font-size: 1.7rem;
+                font-size: 1rem;
             }
         }
 
@@ -633,7 +633,6 @@ function getFileIcon($ext) {
 <?php include_once("includes/guest-header.php") ?>
 <?php include_once("includes/guest-sidebar.php") ?>
 
-<!-- Loading indicator for filter changes -->
 <div class="loading-indicator" id="loadingIndicator"></div>
 
 <main id="main" class="main">

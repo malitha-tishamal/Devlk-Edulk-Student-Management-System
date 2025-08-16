@@ -4,7 +4,7 @@ require_once 'includes/db-conn.php';
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['student_id'])) {
-    echo json_encode(['error' => 'Unauthorized']);
+    echo json_encode(['error' => '⛔ You must log in to watch this video.']);
     exit;
 }
 
