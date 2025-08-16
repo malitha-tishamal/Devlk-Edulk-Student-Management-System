@@ -32,6 +32,12 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" href="pages-lecture-recordings.php">
+                <i class="bi bi-file-play"></i> <span>Recordings</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" href="pages-user-drive.php">
                 <i class="bi bi-hdd"></i> <span>My Drive</span>
             </a>

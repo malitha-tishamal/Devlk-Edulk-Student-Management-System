@@ -1,14 +1,12 @@
-<?php
+<?php 
 session_start();
-require_once 'includes/db-conn.php';
+require_once 'includes/db-conn.php';  
 
-if (!isset($_SESSION['student_id'])) {
-    header("Location: index.php");
-    exit();
-}
 
 $user_id = $_SESSION['student_id'];
-$sql = "SELECT name, email, nic, mobile, profile_picture FROM students WHERE id = ?";
+
+// Get student details
+$sql = "SELECT * FROM students WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -23,15 +21,19 @@ while ($row = $semesterQuery->fetch_assoc()) {
     $semesters[] = $row['semester'];
 }
 
-// Get selected semester from query parameter
+// Get selected semester
 $selected_semester = $_GET['semester'] ?? '';
 
-// Fetch subjects for selected semester
+// Fetch subjects for selected semester (count PUBLIC + PRIVATE recordings)
 $subjectList = [];
 $subjectQuery = $conn->prepare("
-    SELECT s.*, COUNT(r.id) AS recording_count 
+    SELECT s.*, 
+           COUNT(r.id) AS recording_count 
     FROM subjects s
-    LEFT JOIN recordings r ON s.id = r.subject_id AND r.status = 'active'
+    LEFT JOIN recordings r 
+        ON s.id = r.subject_id 
+       AND r.status = 'active'
+       AND (r.access_level = 'public')
     WHERE s.semester = ? OR ? = ''
     GROUP BY s.id
     ORDER BY s.code
@@ -44,12 +46,13 @@ while ($row = $subjectResult->fetch_assoc()) {
 }
 $subjectQuery->close();
 
-// Get selected subject from query parameter
+// Get selected subject
 $selected_subject = isset($_GET['subject']) ? intval($_GET['subject']) : null;
 
-// Fetch recordings based on selection
+// Fetch recordings (PUBLIC + PRIVATE)
 $recordings = [];
 if ($selected_subject) {
+    // When a subject is selected
     $recordingQuery = $conn->prepare("
         SELECT r.*, s.name AS subject_name, s.code AS subject_code,
         CASE 
@@ -61,11 +64,15 @@ if ($selected_subject) {
         JOIN subjects s ON r.subject_id = s.id
         LEFT JOIN sadmins sa ON r.created_by = sa.id AND r.role = 'superadmin'
         LEFT JOIN lectures l ON r.created_by = l.id AND r.role = 'lecture'
-        WHERE r.subject_id = ? AND r.status = 'active'
+        WHERE r.subject_id = ? 
+          AND r.status = 'active'
+          AND (r.access_level = 'public')
         ORDER BY r.release_time DESC
     ");
     $recordingQuery->bind_param("i", $selected_subject);
+
 } else {
+    // Show latest 12 PUBLIC + PRIVATE recordings
     $recordingQuery = $conn->prepare("
         SELECT r.*, s.name AS subject_name, s.code AS subject_code,
         CASE 
@@ -78,6 +85,7 @@ if ($selected_subject) {
         LEFT JOIN sadmins sa ON r.created_by = sa.id AND r.role = 'superadmin'
         LEFT JOIN lectures l ON r.created_by = l.id AND r.role = 'lecture'
         WHERE r.status = 'active'
+          AND (r.access_level = 'public')
         ORDER BY r.release_time DESC
         LIMIT 12
     ");
@@ -90,6 +98,8 @@ while ($row = $result->fetch_assoc()) {
 }
 $recordingQuery->close();
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -128,23 +138,17 @@ $recordingQuery->close();
             line-height: 1.6;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 2px;
             flex-wrap: wrap;
             gap: 20px;
         }
 
         .page-title {
-            font-size: 2.2rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--primary);
             display: flex;
@@ -157,7 +161,7 @@ $recordingQuery->close();
             gap: 20px;
             flex-wrap: wrap;
             background: white;
-            padding: 15px 25px;
+            padding: 10px 10px;
             border-radius: var(--border-radius);
             box-shadow: var(--card-shadow);
         }
@@ -203,11 +207,12 @@ $recordingQuery->close();
             background: white;
             border-radius: var(--border-radius);
             box-shadow: var(--card-shadow);
-            padding: 15px 20px;
+            padding: 10px 10px;
             transition: var(--transition);
             cursor: pointer;
             border: 2px solid transparent;
-            min-width: 200px;
+            min-width: 150px;
+            text-align: center;
         }
 
         .semester-card:hover, .semester-card.active {
@@ -288,86 +293,6 @@ $recordingQuery->close();
             margin-right: 5px;
         }
 
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 20px;
-        }
-
-        .video-card {
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: var(--card-shadow);
-            transition: var(--transition);
-        }
-
-        .video-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
-        }
-
-        .video-thumbnail {
-            position: relative;
-            height: 180px;
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        .video-thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .video-card:hover .video-thumbnail img {
-            transform: scale(1.05);
-        }
-
-        .play-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.8;
-            transition: var(--transition);
-        }
-
-        .video-card:hover .play-icon {
-            opacity: 1;
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        .play-icon i {
-            font-size: 24px;
-            color: var(--primary);
-            margin-left: 5px;
-        }
-
-        .video-duration {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-
-        .video-info {
-            padding: 20px;
-        }
-
         .subject-label {
             display: inline-block;
             background: rgba(67, 97, 238, 0.1);
@@ -376,79 +301,6 @@ $recordingQuery->close();
             border-radius: 30px;
             font-size: 0.8rem;
             margin-bottom: 10px;
-        }
-
-        .video-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .video-meta {
-            display: flex;
-            justify-content: space-between;
-            color: var(--secondary);
-            font-size: 0.85rem;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .video-meta div {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .resource-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .resource-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--dark);
-        }
-
-        .resource-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .resource-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 10px;
-            background: #f9f9ff;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            transition: var(--transition);
-        }
-
-        .resource-item:hover {
-            background: #edf1ff;
-        }
-
-        .resource-item i {
-            color: var(--primary);
-            width: 20px;
-            text-align: center;
-        }
-
-        .resource-name {
-            flex-grow: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .no-recordings {
@@ -511,8 +363,8 @@ $recordingQuery->close();
     </style>
 </head>
 <body>
-    <?php include_once("includes/header.php") ?>
-    <?php include_once("includes/student-sidebar.php") ?>
+    <?php include_once("includes/header2.php") ?>
+    <?php include_once("includes/guest-sidebar.php") ?>
     
     <main id="main" class="main">
         <div class="pagetitle">
@@ -594,7 +446,7 @@ $recordingQuery->close();
                     <?php if (count($subjectList) > 0): ?>
                         <?php foreach ($subjectList as $subject): ?>
                             <div class="subject-card <?= $selected_subject == $subject['id'] ? 'active' : '' ?>" 
-                                 onclick="filterBySubject(<?= $subject['id'] ?>)">
+                                 onclick="window.location.href='subject-recordings.php?subject=<?= $subject['id'] ?>'">
                                  <i class="fa-solid fa-book" style=" font-size: 60px; color: blue;"></i> 
                                 <div class="code"><?= htmlspecialchars($subject['code']) ?></div>
                                 <div class="name"><?= htmlspecialchars($subject['name']) ?></div>
@@ -613,22 +465,7 @@ $recordingQuery->close();
                     <?php endif; ?>
                 </div>
                 
-                <?php if ($selected_subject && count($recordings) > 0): ?>
-                    <h3 class="semester-title">
-                        <i class="fa-solid fa-book"></i>
-                        <?php 
-                        $selected_subject_name = '';
-                        foreach ($subjectList as $subject) {
-                            if ($subject['id'] == $selected_subject) {
-                                $selected_subject_name = $subject['code'] . ' - ' . $subject['name'];
-                                break;
-                            }
-                        }
-                        echo htmlspecialchars($selected_subject_name);
-                        ?>
-                    </h3>
-                <?php endif; ?>
-            </div>
+                
         </div>
     </main>
 
@@ -664,24 +501,6 @@ $recordingQuery->close();
             window.location.href = url;
         }
         
-        function openVideoModal(videoPath, recordingId) {
-            const modalVideo = document.getElementById('modalVideo');
-            const modal = new bootstrap.Modal(document.getElementById('videoModal'));
-            
-            // Extract filename from path
-            const filename = videoPath.split('/').pop();
-            modalVideo.src = 'stream-video.php?file=' + encodeURIComponent(filename);
-            
-            // Update download button
-            document.getElementById('downloadBtn').onclick = function() {
-                downloadVideo(videoPath, recordingId);
-            };
-            
-            modal.show();
-            
-            // Update play count
-            updatePlayCount(recordingId);
-        }
     </script>
 
     <?php include_once("includes/footer.php"); ?>

@@ -164,13 +164,16 @@ $result = $conn->query($sql);
 
                                             // Action Buttons in their respective columns
                                             echo "<td class='text-center'>
-                                                    <button class='btn btn-success btn-sm w-100 approve-btn' data-id='" . $row['id'] . "'>Approve</button>
+                                                    <button class='btn btn-success btn-sm w-100 approve-btn' data-id='" . $row['id'] . "' disabled>Approve</button>
                                                   </td>";
                                             echo "<td class='text-center'>
-                                                    <button class='btn btn-warning btn-sm w-100 disable-btn' data-id='" . $row['id'] . "'>Disable</button>
+                                                    <button class='btn btn-warning btn-sm w-100 disable-btn' data-id='" . $row['id'] . "' disabled>Disable</button>
                                                   </td>";
                                             echo "<td class='text-center'>
-                                                    <button class='btn btn-danger btn-sm w-100 delete-btn' data-id='" . $row['id'] . "'>Delete</button>
+                                                    <button class='btn btn-danger btn-sm w-100 delete-btn' data-id='" . $row['id'] . "' disabled>Delete</button>
+                                                  </td>";
+                                            echo "<td class='text-center'>
+                                                    <button class='btn btn-primary btn-sm w-100 delete-btn' data-id='" . $row['id'] . "' disabled>Edit</button>
                                                   </td>";
                                             // Edit Profile Button
                                             

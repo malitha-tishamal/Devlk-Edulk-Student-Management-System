@@ -228,6 +228,10 @@ session_start();
                                         </div-->
 
                                         <div class="col-12">
+                                          <p class="small mb-0">Are You Lecture ? <a href="index.php">Log in</a></p>
+                                        </div>
+
+                                        <div class="col-12">
                                           <p class="small mb-0">Already have an account? <a href="index.php">Log in</a></p>
                                         </div>
                                       </form>

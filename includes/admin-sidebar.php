@@ -39,18 +39,12 @@
             </ul>
         </li>
 
+        
+
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#wards-nav2" role="button">
-               <i class="bi bi-download"></i> <span>Downloads</span> <i class="bi bi-chevron-down ms-auto"></i>
+            <a class="nav-link collapsed" href="pages-resoursces.php">
+                <i class="bi bi-download"></i> <span>Downloads</span>
             </a>
-            <ul id="wards-nav2" class="nav-content collapse" data-bs-parent="#sidebar-nav">
-                <li>
-                    <a href="manage-files.php">
-                        <i class="bi bi-circle"></i> <span>Add  / Manage</span>
-                    </a>
-                </li>
-                
-            </ul>
         </li>
 
 
