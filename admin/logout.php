@@ -1,7 +1,15 @@
+
 <?php
-session_start(); // Start the session
-session_unset(); // Unset all session variables
-session_destroy(); // Destroy the session
-header("Location: ../index.php"); // Redirect to index.php
+session_start();
+require_once '../includes/db-conn.php';
+$logout_time = date("Y-m-d H:i:s");
+
+$stmt = $conn->prepare("UPDATE admin_logs SET logout_time=? WHERE session_id=?");
+$stmt->bind_param("ss", $logout_time, session_id());
+$stmt->execute();
+
+session_destroy();
+header("Location: ../index.php");
 exit();
 ?>
+

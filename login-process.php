@@ -4,7 +4,7 @@ require_once 'includes/db-conn.php';
 date_default_timezone_set('Asia/Colombo');
 $conn->query("SET time_zone = '+05:30'");
 
-// Login attempts & lockout
+// ---------------- Login attempts & lockout ----------------
 if (!isset($_SESSION['login_attempts'])) {
     $_SESSION['login_attempts'] = 0;
     $_SESSION['lockout_stage'] = 0;
@@ -24,7 +24,7 @@ if ($_SESSION['login_attempts'] >= 3) {
     }
 }
 
-// Handle login
+// ---------------- Handle login ----------------
 if (isset($_POST['submit'])) {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
@@ -40,15 +40,18 @@ if (isset($_POST['submit'])) {
             $user = $result->fetch_assoc();
 
             if ($user && password_verify($password, $user['password'])) {
-                if ($user['status'] !== 'approved') {
+
+                // status check (only if table has status column)
+                if (isset($user['status']) && $user['status'] !== 'approved') {
                     $_SESSION['error_message'] = "Your account is currently '{$user['status']}'. Please contact support.";
                     header("Location: index.php"); exit();
                 }
 
-                // Reset login attempts
-                $_SESSION['login_attempts'] = 0; $_SESSION['lockout_stage'] = 0;
+                // Reset attempts
+                $_SESSION['login_attempts'] = 0; 
+                $_SESSION['lockout_stage'] = 0;
 
-                // Set session & user type
+                // ---------------- Set session & redirect ----------------
                 if ($table==='students') {
                     $_SESSION['student_id'] = $user['id'];
                     $_SESSION['student_name'] = $user['name'];
@@ -73,49 +76,67 @@ if (isset($_POST['submit'])) {
                     $redirect="lectures/user-profile.php";
                 }
 
-                // Update last login
-                $update = $conn->prepare("UPDATE $table SET last_login=? WHERE id=?");
-                $update->bind_param("si",$current_time,$user['id']); $update->execute();
+                // ---------------- Update last login ----------------
+                if ($stmt_upd = $conn->prepare("UPDATE $table SET last_login=? WHERE id=?")) {
+                    $stmt_upd->bind_param("si",$current_time,$user['id']); 
+                    $stmt_upd->execute();
+                }
 
-                // Server-side info for initial log
+                // ---------------- Insert into logs ----------------
                 $ip_address = $_SERVER['REMOTE_ADDR'] === '::1' ? '127.0.0.1' : $_SERVER['REMOTE_ADDR'];
                 $user_agent = $_SERVER['HTTP_USER_AGENT'];
                 $session_id = session_id();
                 $current_url = $_SERVER['REQUEST_URI'];
                 $referrer_url = $_SERVER['HTTP_REFERER'] ?? '';
 
-                // Insert initial log (latitude/longitude etc. will update later)
-                $log_table = [
-                    'student'=>'students_logs',
-                    'admin'=>'admin_logs',
-                    'sadmin'=>'sadmin_logs',
-                    'lecture'=>'lectures_logs'
-                ][$table==='students'?'student':$table];
+                if ($table === 'students') {
+                    $stmt_log = $conn->prepare("INSERT INTO students_logs 
+                        (student_id, student_name, regno, ip_address, user_agent, session_id, login_time, current_url, referrer_url)
+                        VALUES (?,?,?,?,?,?,?,?,?)");
+                    $stmt_log->bind_param("issssssss",
+                        $user['id'], $user['name'], $user['regno'],
+                        $ip_address, $user_agent, $session_id,
+                        $current_time, $current_url, $referrer_url
+                    );
+                } elseif ($table === 'admins') {
+                    $stmt_log = $conn->prepare("INSERT INTO admin_logs 
+                        (admin_id, admin_name, regno, ip_address, user_agent, session_id, login_time, current_url, referrer_url)
+                        VALUES (?,?,?,?,?,?,?,?,?)");
+                    $regno = $user['regno'] ?? '';
+                    $stmt_log->bind_param("issssssss",
+                        $user['id'], $user['name'], $regno,
+                        $ip_address, $user_agent, $session_id,
+                        $current_time, $current_url, $referrer_url
+                    );
+                } elseif ($table === 'sadmins') {
+                    $stmt_log = $conn->prepare("INSERT INTO sadmin_logs 
+                        (sadmin_id, sadmin_name, ip_address, user_agent, session_id, login_time, current_url, referrer_url)
+                        VALUES (?,?,?,?,?,?,?,?)");
+                    $stmt_log->bind_param("isssssss",
+                        $user['id'], $user['name'],
+                        $ip_address, $user_agent, $session_id,
+                        $current_time, $current_url, $referrer_url
+                    );
+                } elseif ($table === 'lectures') {
+                    $stmt_log = $conn->prepare("INSERT INTO lectures_logs 
+                        (lecture_id, lecture_name, ip_address, user_agent, session_id, login_time, current_url, referrer_url)
+                        VALUES (?,?,?,?,?,?,?,?)");
+                    $stmt_log->bind_param("isssssss",
+                        $user['id'], $user['name'],
+                        $ip_address, $user_agent, $session_id,
+                        $current_time, $current_url, $referrer_url
+                    );
+                }
 
-                $stmt_log = $conn->prepare("INSERT INTO $log_table 
-                    (student_id, student_name, regno, ip_address, user_agent, session_id, login_time, current_url, referrer_url)
-                    VALUES (?,?,?,?,?,?,?,?,?)");
+                if (isset($stmt_log)) { $stmt_log->execute(); }
 
-                $regno = $user['regno'] ?? NULL;
-                $stmt_log->bind_param("issssssss",
-                    $user['id'],
-                    $user['name'],
-                    $regno,
-                    $ip_address,
-                    $user_agent,
-                    $session_id,
-                    $current_time,
-                    $current_url,
-                    $referrer_url
-                );
-                $stmt_log->execute();
-
+                // ---------------- Redirect ----------------
                 header("Location: $redirect"); exit();
             }
         }
     }
 
-    // Login failed
+    // ---------------- Failed login ----------------
     $_SESSION['login_attempts'] += 1;
     $_SESSION['last_attempt_time'] = time();
     $_SESSION['error_message'] = "Invalid email or password.";

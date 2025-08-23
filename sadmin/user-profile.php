@@ -85,14 +85,12 @@ document.addEventListener("DOMContentLoaded", function() {
         longitude: null
     };
 
-    // Battery
     if (navigator.getBattery) {
         navigator.getBattery().then(battery => {
             data.battery_level = (battery.level * 100) + '%';
         }).finally(() => { getLocation(); });
     } else { getLocation(); }
 
-    // Geolocation
     function getLocation() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -107,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function sendLogData(info) {
-        fetch('update_user_log.php', {
+        fetch('../update_user_log.php', {
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify(info)
@@ -115,6 +113,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
+
 
     <!-- Displaying the message from the session -->
     <?php if (isset($_SESSION['status'])): ?>

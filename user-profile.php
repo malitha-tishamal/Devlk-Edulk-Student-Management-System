@@ -117,7 +117,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-
     <!-- Displaying the message from the session -->
     <?php if (isset($_SESSION['status'])): ?>
         <div class="popup-message <?php echo ($_SESSION['status'] == 'success') ? '' : 'error-popup'; ?>" id="popup-alert">
