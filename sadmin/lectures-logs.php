@@ -23,9 +23,9 @@ $stmt->close();
 
 // Fetch all superadmin logs and join with sadmins table to get profile picture
 $sql_logs = "
-    SELECT l.*, sa.profile_picture, sa.name AS real_sadmin_name
-    FROM sadmin_logs l
-    LEFT JOIN sadmins sa ON l.sadmin_id = sa.id
+    SELECT l.*, sa.profile_picture, sa.name AS real_lecture_name
+    FROM lecture_logs l
+    LEFT JOIN lectures sa ON l.sadmin_id = sa.id
     ORDER BY l.login_time DESC
 ";
 
