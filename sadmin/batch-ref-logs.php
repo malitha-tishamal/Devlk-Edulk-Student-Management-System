@@ -23,9 +23,9 @@ $stmt->close();
 
 // Fetch all superadmin logs and join with sadmins table to get profile picture
 $sql_logs = "
-    SELECT l.*, lec.profile_picture
-    FROM lectures_logs l
-    LEFT JOIN lectures lec ON l.lecture_id = lec.id
+    SELECT l.*, a.profile_picture
+    FROM admin_logs l
+    LEFT JOIN admins a ON l.admin_id = a.id
     ORDER BY l.login_time DESC
 ";
 
@@ -83,7 +83,7 @@ $map_json = json_encode($map_data);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lectures Logs - Edulk</title>
+<title>Batch Representer Logs - Edulk</title>
 <?php include_once ("../includes/css-links-inc.php"); ?>
 <style>
 table { border-collapse: collapse; width: 100%; font-size:14px; }
@@ -149,7 +149,7 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
                                         <td>
                                             <?php 
                                             $profile = !empty($log['profile_picture']) 
-                                                       ? "../lectures/{$log['profile_picture']}" 
+                                                       ? "../admin/{$log['profile_picture']}" 
                                                        : "../uploads/default.png"; 
                                             ?>
                                             <img src="<?= htmlspecialchars($profile) ?>" class="profile-pic" alt="Profile">

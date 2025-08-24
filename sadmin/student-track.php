@@ -90,7 +90,7 @@ tr:nth-child(even) { background-color: #fdfdfd; }
 tr:hover { background-color: #f1f3f5; transition: 0.2s; }
 
 /* Profile Picture */
-.profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; }
+.profile-pic { width: 120px; height: 120px; object-fit: cover; }
 
 /* Map Section */
 #map { height: 450px; width: 100%; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 20px; }

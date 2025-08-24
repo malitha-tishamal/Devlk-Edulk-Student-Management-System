@@ -15,9 +15,41 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link" href="pages-guests-logdata.php">
-                 <i class="bi bi-person-gear"></i> <span>Guests</span>
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#antibiotics-nav" role="button">
+               <i class="bi bi-graph-up"></i> <span>Logs Analyzis</span> <i class="bi bi-chevron-down ms-auto"></i>
             </a>
+            <ul id="antibiotics-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+
+                <li>
+                    <a href="pages-guests-logdata.php">
+                         <i class="bi bi-circle"></i> <span>Guest Logs</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="sadmins-logs.php">
+                         <i class="bi bi-circle"></i> <span>Admin Logs</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="lectures-logs.php">
+                         <i class="bi bi-circle"></i> <span>Lectures Logs</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="batch-ref-logs.php">
+                         <i class="bi bi-circle"></i> <span>Batch Reptresenter Logs</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="student-track.php">
+                        <i class="bi bi-circle"></i> <span>Students Logs</span>
+                    </a>
+                </li>
+            </ul>
         </li>
 
         <li class="nav-item">

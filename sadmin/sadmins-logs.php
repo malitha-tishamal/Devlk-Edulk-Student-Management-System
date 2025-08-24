@@ -23,7 +23,7 @@ $stmt->close();
 
 // Fetch all superadmin logs and join with sadmins table to get profile picture
 $sql_logs = "
-    SELECT l.*, sa.profile_picture, sa.name AS real_sadmin_name
+    SELECT l.*, sa.profile_picture
     FROM sadmin_logs l
     LEFT JOIN sadmins sa ON l.sadmin_id = sa.id
     ORDER BY l.login_time DESC
@@ -91,7 +91,7 @@ th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
 tr:nth-child(even) { background-color: #fdfdfd; }
 tr:hover { background-color: #f1f3f5; transition: 0.2s; }
 
-.profile-pic { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+.profile-pic { width: 120px; height: 120px; object-fit: cover; }
 
 #map { height: 450px; width: 100%; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 20px; }
 .open-map-icon { font-size: 18px; color: #0d6efd; transition: color 0.2s; }
@@ -148,7 +148,7 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
                                         <td>
                                             <?php 
                                             $profile = !empty($log['profile_picture']) 
-                                                       ? "uploads/profile_pictures/{$log['profile_picture']}" 
+                                                       ? "{$log['profile_picture']}" 
                                                        : "../uploads/default.png"; 
                                             ?>
                                             <img src="<?= htmlspecialchars($profile) ?>" class="profile-pic" alt="Profile">
