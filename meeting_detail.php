@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
     --dark: #343a40;
     --card-shadow: 0 12px 30px rgba(0,0,0,0.08);
     --card-shadow-hover: 0 15px 35px rgba(0,0,0,0.12);
-    --border-radius: 12px;
+    --border-radius: 12px; 
     --transition: all 0.3s ease;
 }
 *{margin:0;padding:0;box-sizing:border-box;}

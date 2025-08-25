@@ -197,7 +197,7 @@
                 </li>
 
                 <li>
-                    <a href="#.php">
+                    <a href="pages-meeting-attendance.php">
                         <i class="bi bi-circle"></i> <span>Meeting Attendance</span>
                     </a>
                 </li>
