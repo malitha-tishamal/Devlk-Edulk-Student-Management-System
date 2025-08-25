@@ -15,10 +15,10 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#antibiotics-nav" role="button">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#logdata-nav" role="button">
                <i class="bi bi-graph-up"></i> <span>Logs Analyzis</span> <i class="bi bi-chevron-down ms-auto"></i>
             </a>
-            <ul id="antibiotics-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+            <ul id="logdata-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
 
                 <li>
                     <a href="pages-guests-logdata.php">

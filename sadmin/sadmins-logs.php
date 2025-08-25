@@ -12,7 +12,12 @@ if (isset($_POST['page_password'])) {
     }
 }
 
-$user_id = $_SESSION['sadmin_id'];
+$user_id = $_SESSION['sadmin_id'] ?? null;
+if (!$user_id) {
+    header("Location: index.php");
+    exit();
+}
+
 $sql = "SELECT * FROM sadmins WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
@@ -28,46 +33,12 @@ $sql_logs = "
     LEFT JOIN sadmins sa ON l.sadmin_id = sa.id
     ORDER BY l.login_time DESC
 ";
-
 $stmt = $conn->prepare($sql_logs);
 $stmt->execute();
 $result = $stmt->get_result();
-
 $logs = [];
 while ($row = $result->fetch_assoc()) {
     $logs[] = $row;
-}
-
-// Password page if not authorized
-if (!isset($_SESSION['sadmin_logs_access']) || $_SESSION['sadmin_logs_access'] !== true) {
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Enter Password</title>
-        <link rel="stylesheet" href="../includes/css-links-inc.php">
-        <style>
-        .password-box { max-width: 400px; margin: 100px auto; text-align: center; }
-        input[type=password] { padding: 10px; width: 100%; margin-bottom: 10px; }
-        button { padding: 10px 20px; cursor: pointer; }
-        .error { color: red; margin-bottom: 10px; }
-        </style>
-    </head>
-    <body>
-        <div class="password-box">
-            <h2>Enter Page Password</h2>
-            <?php if(isset($error)) echo "<div class='error'>$error</div>"; ?>
-            <form method="post">
-                <input type="password" name="page_password" placeholder="Password" required><br>
-                <button type="submit">Access</button>
-            </form>
-        </div>
-    </body>
-    </html>
-    <?php
-    exit();
 }
 
 // Prepare map data
@@ -90,15 +61,16 @@ th, td { border: 1px solid #e9ecef; padding: 8px; text-align: center; vertical-a
 th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
 tr:nth-child(even) { background-color: #fdfdfd; }
 tr:hover { background-color: #f1f3f5; transition: 0.2s; }
-
 .profile-pic { width: 120px; height: 120px; object-fit: cover; }
-
 #map { height: 450px; width: 100%; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 20px; }
 .open-map-icon { font-size: 18px; color: #0d6efd; transition: color 0.2s; }
 .open-map-icon:hover { color: #dc3545; }
-
 .card { border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
 .card-title { font-weight: 600; color: #212529; }
+.password-box { max-width: 400px; margin: 20px auto; text-align: center; }
+input[type=password] { padding: 10px; width: 100%; margin-bottom: 10px; }
+button { padding: 10px 20px; cursor: pointer; }
+.error { color: red; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -121,11 +93,33 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
         <div class="row">
             <div class="col-12">
 
+            <?php if(!isset($_SESSION['sadmin_logs_access']) || $_SESSION['sadmin_logs_access'] !== true): ?>
+                <!-- PASSWORD FORM INSIDE LAYOUT -->
+                <div class="card shadow-sm border-0 mx-auto" style="max-width: 400px;">
+    <div class="card-body text-center">
+        <h5 class="card-title mb-4">🔒 Enter Page Password</h5>
+
+        <?php if(isset($error)): ?>
+            <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+
+        <form method="post">
+            <div class="mb-3">
+                <input type="password" name="page_password" class="form-control form-control-lg" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="bi bi-unlock-fill me-2"></i> Access
+            </button>
+        </form>
+    </div>
+</div>
+
+            <?php else: ?>
+                <!-- LOG TABLE -->
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">All Superadmin Logs</h5>
                         <input type="text" id="searchInput" class="form-control w-50 mb-3" placeholder="Search logs...">
-
                         <div class="table-responsive">
                             <table id="logsTable" class="table align-datatable">
                                 <thead>
@@ -175,23 +169,14 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
                     </div>
                 </div>
 
-                <script>
-                document.getElementById("searchInput").addEventListener("keyup", function() {
-                    let filter = this.value.toLowerCase();
-                    let rows = document.querySelectorAll("#logsTable tbody tr");
-                    rows.forEach(row => {
-                        let text = row.innerText.toLowerCase();
-                        row.style.display = text.includes(filter) ? "" : "none";
-                    });
-                });
-                </script>
-
+                <!-- MAP -->
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">🌍 Superadmin Locations</h5>
                         <div id="map"></div>
                     </div>
                 </div>
+            <?php endif; ?>
 
             </div>
         </div>
@@ -203,6 +188,7 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
 <?php include_once ("../includes/js-links-inc.php") ?>
 
 <script>
+<?php if(isset($map_json)): ?>
 const logs = <?= $map_json ?>;
 function initMap() {
     const map = new google.maps.Map(document.getElementById("map"), {
@@ -235,7 +221,20 @@ function initMap() {
         }
     });
 }
+<?php endif; ?>
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+
+<script>
+document.getElementById("searchInput")?.addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#logsTable tbody tr");
+    rows.forEach(row => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+});
+</script>
+
 </body>
 </html>

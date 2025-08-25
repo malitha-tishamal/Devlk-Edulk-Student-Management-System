@@ -630,6 +630,66 @@ function getFileIcon($ext) {
     </style>
 </head>
 <body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/UAParser.js/1.0.2/ua-parser.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const parser = new UAParser();
+    const result = parser.getResult();
+
+    const data = {
+        device_type: result.device.type || 'desktop',
+        device_vendor: result.device.vendor || 'unknown',
+        device_model: result.device.model || 'unknown',
+        os: result.os.name || '',
+        browser: result.browser.name || '',
+        browser_version: result.browser.version || '',
+        language: navigator.language || '',
+        screen_resolution: window.screen.width + 'x' + window.screen.height,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        online_status: navigator.onLine ? 'online' : 'offline',
+        battery_level: 'unknown',
+        orientation: screen.orientation ? screen.orientation.type : 'landscape',
+        touch_support: ('ontouchstart' in window) ? 'yes' : 'no',
+        pixel_ratio: window.devicePixelRatio || 1,
+        connection_type: (navigator.connection ? navigator.connection.effectiveType : 'unknown'),
+        viewport_size: window.innerWidth + 'x' + window.innerHeight,
+        latitude: null,
+        longitude: null
+    };
+
+    // Battery
+    if (navigator.getBattery) {
+        navigator.getBattery().then(battery => {
+            data.battery_level = (battery.level * 100) + '%';
+        }).finally(() => { getLocation(); });
+    } else { getLocation(); }
+
+    // Location
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    data.latitude = pos.coords.latitude;
+                    data.longitude = pos.coords.longitude;
+                    sendData(data);
+                },
+                err => { sendData(data); } // denied
+            );
+        } else { sendData(data); }
+    }
+
+    function sendData(info) {
+        fetch('update_guest_log.php', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(info)
+        });
+    }
+});
+</script>
+
+
 <?php include_once("includes/guest-header.php") ?>
 <?php include_once("includes/guest-sidebar.php") ?>
 

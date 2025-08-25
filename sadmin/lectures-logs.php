@@ -12,7 +12,7 @@ if (isset($_POST['page_password'])) {
     }
 }
 
-$user_id = $_SESSION['sadmin_id'];
+$user_id = $_SESSION['sadmin_id'] ?? 0;
 $sql = "SELECT * FROM sadmins WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
@@ -21,15 +21,13 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
 
-// Fetch all superadmin logs and join with sadmins table to get profile picture
+// Fetch logs
 $sql_logs = "
     SELECT l.*, lec.profile_picture
     FROM lectures_logs l
     LEFT JOIN lectures lec ON l.lecture_id = lec.id
     ORDER BY l.login_time DESC
 ";
-
-
 $stmt = $conn->prepare($sql_logs);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -39,7 +37,7 @@ while ($row = $result->fetch_assoc()) {
     $logs[] = $row;
 }
 
-// Password page if not authorized
+// Show password page if not authorized
 if (!isset($_SESSION['sadmin_logs_access']) || $_SESSION['sadmin_logs_access'] !== true) {
     ?>
     <!DOCTYPE html>
@@ -48,23 +46,34 @@ if (!isset($_SESSION['sadmin_logs_access']) || $_SESSION['sadmin_logs_access'] !
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Enter Password</title>
-        <link rel="stylesheet" href="../includes/css-links-inc.php">
-        <style>
-        .password-box { max-width: 400px; margin: 100px auto; text-align: center; }
-        input[type=password] { padding: 10px; width: 100%; margin-bottom: 10px; }
-        button { padding: 10px 20px; cursor: pointer; }
-        .error { color: red; margin-bottom: 10px; }
-        </style>
+        <?php include_once ("../includes/css-links-inc.php"); ?>
     </head>
     <body>
-        <div class="password-box">
-            <h2>Enter Page Password</h2>
-            <?php if(isset($error)) echo "<div class='error'>$error</div>"; ?>
-            <form method="post">
-                <input type="password" name="page_password" placeholder="Password" required><br>
-                <button type="submit">Access</button>
-            </form>
-        </div>
+        <?php include_once ("../includes/header.php"); ?>
+        <?php include_once ("../includes/sadmin-sidebar.php"); ?>
+
+        <main class="main d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+            <div class="card shadow-sm" style="max-width: 400px; width: 100%;">
+                <div class="card-body text-center">
+                    <h5 class="card-title mb-3">🔒 Enter Page Password</h5>
+                    <?php if (!empty($error)): ?>
+                        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+                    <?php endif; ?>
+                    <form method="post">
+                        <div class="mb-3">
+                            <input type="password" name="page_password" class="form-control form-control-lg" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-unlock-fill me-2"></i> Access Logs
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <?php include_once ("../includes/footer.php"); ?>
+        <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+        <?php include_once ("../includes/js-links-inc.php"); ?>
     </body>
     </html>
     <?php
@@ -72,9 +81,7 @@ if (!isset($_SESSION['sadmin_logs_access']) || $_SESSION['sadmin_logs_access'] !
 }
 
 // Prepare map data
-$map_data = array_filter($logs, function($l) {
-    return !empty($l['latitude']) && !empty($l['longitude']);
-});
+$map_data = array_filter($logs, fn($l) => !empty($l['latitude']) && !empty($l['longitude']));
 $map_json = json_encode($map_data);
 ?>
 
@@ -91,29 +98,26 @@ th, td { border: 1px solid #e9ecef; padding: 8px; text-align: center; vertical-a
 th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
 tr:nth-child(even) { background-color: #fdfdfd; }
 tr:hover { background-color: #f1f3f5; transition: 0.2s; }
-
-.profile-pic { width: 120px; height: 120px; object-fit: cover; }
-
+.profile-pic { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; }
 #map { height: 450px; width: 100%; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 20px; }
 .open-map-icon { font-size: 18px; color: #0d6efd; transition: color 0.2s; }
 .open-map-icon:hover { color: #dc3545; }
-
 .card { border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
 .card-title { font-weight: 600; color: #212529; }
 </style>
 </head>
 <body>
 
-<?php include_once ("../includes/header.php") ?>
-<?php include_once ("../includes/sadmin-sidebar.php") ?>
+<?php include_once ("../includes/header.php"); ?>
+<?php include_once ("../includes/sadmin-sidebar.php"); ?>
 
 <main id="main" class="main">
     <div class="pagetitle">
-        <h1>📊 Superadmin Logs</h1>
+        <h1>📊 Lectures Logs</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="index.php">Home</a></li>
-                <li class="breadcrumb-item active">Superadmin Logs</li>
+                <li class="breadcrumb-item active">Lectures Logs</li>
             </ol>
         </nav>
     </div>
@@ -122,9 +126,10 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
         <div class="row">
             <div class="col-12">
 
+                <!-- Logs Table -->
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">All Superadmin Logs</h5>
+                        <h5 class="card-title">All Lectures Logs</h5>
                         <input type="text" id="searchInput" class="form-control w-50 mb-3" placeholder="Search logs...">
 
                         <div class="table-responsive">
@@ -135,9 +140,7 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
                                         <?php
                                         $columns = array_keys($logs[0] ?? []);
                                         foreach($columns as $col) {
-                                            if(!in_array($col, ['latitude','longitude','profile_picture'])) {
-                                                echo "<th>".ucfirst($col)."</th>";
-                                            }
+                                            if(!in_array($col, ['latitude','longitude','profile_picture'])) echo "<th>".ucfirst($col)."</th>";
                                         }
                                         echo "<th>Location</th>";
                                         ?>
@@ -149,8 +152,8 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
                                         <td>
                                             <?php 
                                             $profile = !empty($log['profile_picture']) 
-                                                       ? "../lectures/{$log['profile_picture']}" 
-                                                       : "../uploads/default.png"; 
+                                                ? "../lectures/{$log['profile_picture']}" 
+                                                : "../uploads/default.png"; 
                                             ?>
                                             <img src="<?= htmlspecialchars($profile) ?>" class="profile-pic" alt="Profile">
                                         </td>
@@ -176,17 +179,17 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
                     </div>
                 </div>
 
+                <!-- Search Script -->
                 <script>
                 document.getElementById("searchInput").addEventListener("keyup", function() {
                     let filter = this.value.toLowerCase();
-                    let rows = document.querySelectorAll("#logsTable tbody tr");
-                    rows.forEach(row => {
-                        let text = row.innerText.toLowerCase();
-                        row.style.display = text.includes(filter) ? "" : "none";
+                    document.querySelectorAll("#logsTable tbody tr").forEach(row => {
+                        row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
                     });
                 });
                 </script>
 
+                <!-- Map -->
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">🌍 Superadmin Locations</h5>
@@ -199,9 +202,9 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
     </section>
 </main>
 
-<?php include_once ("../includes/footer.php") ?>
+<?php include_once ("../includes/footer.php"); ?>
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-<?php include_once ("../includes/js-links-inc.php") ?>
+<?php include_once ("../includes/js-links-inc.php"); ?>
 
 <script>
 const logs = <?= $map_json ?>;
@@ -216,7 +219,7 @@ function initMap() {
         const lng = parseFloat(log.longitude);
         if(!isNaN(lat) && !isNaN(lng)){
             const marker = new google.maps.Marker({
-                position: {lat: lat, lng: lng},
+                position: {lat, lng},
                 map: map,
                 title: log.sadmin_name,
                 icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
@@ -232,7 +235,7 @@ function initMap() {
                           </div>`
             });
 
-            marker.addListener('click', ()=> infoWindow.open(map, marker));
+            marker.addListener('click', () => infoWindow.open(map, marker));
         }
     });
 }

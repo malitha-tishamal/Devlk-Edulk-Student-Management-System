@@ -2,16 +2,78 @@
 session_start();
 require_once '../includes/db-conn.php';
 
+
+$user_id = $_SESSION['sadmin_id'] ?? 0;
+$sql = "SELECT * FROM sadmins WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+$stmt->close();
+
+
 // ====== PASSWORD PROTECTION ======
 $PAGE_PASSWORD = "00000000"; // <-- Change this
 if (isset($_POST['page_password'])) {
     if ($_POST['page_password'] === $PAGE_PASSWORD) {
         $_SESSION['sadmin_logs_access'] = true;
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
     } else {
         $error = "Incorrect password!";
     }
 }
 
+
+// Check if authorized
+if (!isset($_SESSION['sadmin_logs_access']) || $_SESSION['sadmin_logs_access'] !== true) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Enter Password - Edulk</title>
+        <?php include_once ("../includes/css-links-inc.php"); ?>
+        <style>
+        body { 
+            background: linear-gradient(135deg,#f8f9fa,#e9ecef);
+            min-height:100vh; display:flex; flex-direction:column;
+        }
+        .main-container { display:flex; }
+        .password-wrapper { flex:1; display:flex; justify-content:center; align-items:center; padding:50px; }
+        .password-card { background:#fff; padding:40px 30px; border-radius:15px; box-shadow:0 8px 25px rgba(0,0,0,0.15); max-width:400px; width:100%; text-align:center; }
+        .password-card h2 { margin-bottom:25px; font-weight:700; color:#212529; }
+        .password-card input[type=password] { padding:12px 15px; width:100%; border-radius:8px; border:1px solid #ced4da; margin-bottom:20px; font-size:14px; }
+        .password-card button { padding:12px 25px; border:none; background:#0d6efd; color:#fff; border-radius:8px; font-size:15px; cursor:pointer; transition:0.3s; }
+        .password-card button:hover { background:#0b5ed7; }
+        .error { color:#dc3545; margin-bottom:15px; font-weight:500; }
+        </style>
+    </head>
+    <body>
+    <?php include_once ("../includes/header.php"); ?>
+    <?php include_once ("../includes/sadmin-sidebar.php"); ?>
+    <div class="main-container mt-5">
+        <div class="password-wrapper">
+            <div class="password-card">
+                <h2>🔒 Enter Page Password</h2>
+                <?php if(isset($error)) echo "<div class='error'>$error</div>"; ?>
+                <form method="post">
+                    <input type="password" name="page_password" placeholder="Enter password" required>
+                    <button type="submit">Access</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <?php include_once ("../includes/js-links-inc.php"); ?>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
+// ===== Fetch user info =====
 $user_id = $_SESSION['sadmin_id'];
 $sql = "SELECT * FROM sadmins WHERE id = ?";
 $stmt = $conn->prepare($sql);
@@ -21,15 +83,13 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
 
-// Fetch all superadmin logs and join with sadmins table to get profile picture
+// ===== Fetch all superadmin logs =====
 $sql_logs = "
     SELECT l.*, a.profile_picture
     FROM admin_logs l
     LEFT JOIN admins a ON l.admin_id = a.id
     ORDER BY l.login_time DESC
 ";
-
-
 $stmt = $conn->prepare($sql_logs);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -38,38 +98,7 @@ $logs = [];
 while ($row = $result->fetch_assoc()) {
     $logs[] = $row;
 }
-
-// Password page if not authorized
-if (!isset($_SESSION['sadmin_logs_access']) || $_SESSION['sadmin_logs_access'] !== true) {
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Enter Password</title>
-        <link rel="stylesheet" href="../includes/css-links-inc.php">
-        <style>
-        .password-box { max-width: 400px; margin: 100px auto; text-align: center; }
-        input[type=password] { padding: 10px; width: 100%; margin-bottom: 10px; }
-        button { padding: 10px 20px; cursor: pointer; }
-        .error { color: red; margin-bottom: 10px; }
-        </style>
-    </head>
-    <body>
-        <div class="password-box">
-            <h2>Enter Page Password</h2>
-            <?php if(isset($error)) echo "<div class='error'>$error</div>"; ?>
-            <form method="post">
-                <input type="password" name="page_password" placeholder="Password" required><br>
-                <button type="submit">Access</button>
-            </form>
-        </div>
-    </body>
-    </html>
-    <?php
-    exit();
-}
+$stmt->close();
 
 // Prepare map data
 $map_data = array_filter($logs, function($l) {
@@ -83,7 +112,7 @@ $map_json = json_encode($map_data);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Batch Representer Logs - Edulk</title>
+<title>Batch Ref Logs - Edulk</title>
 <?php include_once ("../includes/css-links-inc.php"); ?>
 <style>
 table { border-collapse: collapse; width: 100%; font-size:14px; }
@@ -104,16 +133,16 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
 </head>
 <body>
 
-<?php include_once ("../includes/header.php") ?>
-<?php include_once ("../includes/sadmin-sidebar.php") ?>
+<?php include_once ("../includes/header.php"); ?>
+<?php include_once ("../includes/sadmin-sidebar.php"); ?>
 
 <main id="main" class="main">
     <div class="pagetitle">
-        <h1>📊 Superadmin Logs</h1>
+        <h1>📊 Batch Ref Logs</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="index.php">Home</a></li>
-                <li class="breadcrumb-item active">Superadmin Logs</li>
+                <li class="breadcrumb-item active">Batch Ref Logs</li>
             </ol>
         </nav>
     </div>
@@ -124,7 +153,7 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
 
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">All Superadmin Logs</h5>
+                        <h5 class="card-title">All Batch Ref Logs</h5>
                         <input type="text" id="searchInput" class="form-control w-50 mb-3" placeholder="Search logs...">
 
                         <div class="table-responsive">
@@ -199,9 +228,9 @@ tr:hover { background-color: #f1f3f5; transition: 0.2s; }
     </section>
 </main>
 
-<?php include_once ("../includes/footer.php") ?>
+<?php include_once ("../includes/footer.php"); ?>
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-<?php include_once ("../includes/js-links-inc.php") ?>
+<?php include_once ("../includes/js-links-inc.php"); ?>
 
 <script>
 const logs = <?= $map_json ?>;
