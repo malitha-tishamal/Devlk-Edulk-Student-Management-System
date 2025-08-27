@@ -3,14 +3,14 @@ session_start();
 require_once '../includes/db-conn.php';
 
 // Redirect if not logged in
-if (!isset($_SESSION['sadmin_id'])) {
+if (!isset($_SESSION['lecture_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
-// Fetch logged-in superadmin details
-$user_id = $_SESSION['sadmin_id'];
-$sql = "SELECT name, email, nic, mobile, profile_picture FROM sadmins WHERE id = ?";
+// Fetch logged-in lecture details
+$user_id = $_SESSION['lecture_id'];
+$sql = "SELECT name, email, nic, mobile, profile_picture FROM lectures WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -18,10 +18,19 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
 
-// Fetch all meetings
+// Fetch only meetings created by this lecture
 $meetings = [];
-$res = $conn->query("SELECT id, title, date FROM meetings ORDER BY date DESC");
-while ($row = $res->fetch_assoc()) $meetings[] = $row;
+$stmt = $conn->prepare("SELECT id, title, date 
+                        FROM meetings 
+                        WHERE created_by = ? AND role = 'lecture'
+                        ORDER BY date DESC");
+$stmt->bind_param("s", $user['name']);  // lecture's name matches created_by
+$stmt->execute();
+$res = $stmt->get_result();
+while ($row = $res->fetch_assoc()) {
+    $meetings[] = $row;
+}
+$stmt->close();
 
 // Selected meeting & attendance
 $selectedMeeting = $_GET['meeting'] ?? '';
@@ -37,25 +46,27 @@ $attendanceStats = [
 if ($selectedMeeting) {
     // ✅ Fetch Meeting Details
     $stmt = $conn->prepare("SELECT id, title, date, start_time, zoom_link, created_by, role, subject 
-                            FROM meetings WHERE id = ?");
-    $stmt->bind_param("i", $selectedMeeting);
+                            FROM meetings 
+                            WHERE id = ? AND created_by = ? AND role = 'lecture'");
+    $stmt->bind_param("is", $selectedMeeting, $user['name']);
     $stmt->execute();
     $meetingDetails = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    // ✅ Fetch Attendance with Meeting Info
-    $stmt = $conn->prepare("
-        SELECT id, meeting_id, student_id, name, regno, logtime, status, ip_address, user_agent 
-        FROM meeting_attendance 
-        WHERE meeting_id = ? 
-        ORDER BY logtime DESC
-    ");
-    $stmt->bind_param("i", $selectedMeeting);
-    $stmt->execute();
-    $attendance = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
-    
-    // Calculate attendance statistics dynamically
+    if ($meetingDetails) {
+        // ✅ Fetch Attendance with Meeting Info
+        $stmt = $conn->prepare("
+            SELECT id, meeting_id, student_id, name, regno, logtime, status, ip_address, user_agent 
+            FROM meeting_attendance 
+            WHERE meeting_id = ? 
+            ORDER BY logtime DESC
+        ");
+        $stmt->bind_param("i", $selectedMeeting);
+        $stmt->execute();
+        $attendance = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        
+        // Calculate attendance statistics dynamically
 $attendanceStats['total'] = count($attendance);
 
 if ($meetingDetails) {
@@ -79,6 +90,7 @@ unset($record);
 // Everyone who did not log in = absent
 $attendanceStats['absent'] = $attendanceStats['total'] - ($attendanceStats['present'] + $attendanceStats['late']);
 
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -86,7 +98,7 @@ $attendanceStats['absent'] = $attendanceStats['total'] - ($attendanceStats['pres
 
 <head>
   <meta charset="utf-8" />
-  <title>Meeting Attendance | Modern Dashboard</title>
+  <title>Meeting Attendance</title>
   <?php include_once("../includes/css-links-inc.php"); ?>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
@@ -282,7 +294,7 @@ $attendanceStats['absent'] = $attendanceStats['total'] - ($attendanceStats['pres
 
 <body>
 <?php include_once("../includes/header.php"); ?>
-<?php include_once("../includes/sadmin-sidebar.php"); ?>
+<?php include_once("../includes/lectures-sidebar.php"); ?>
 
 <main id="main" class="main">
   <div class="pagetitle">
@@ -480,6 +492,8 @@ $(document).ready(function() {
         }
     });
 });
+
+
 </script>
 </body>
 </html>

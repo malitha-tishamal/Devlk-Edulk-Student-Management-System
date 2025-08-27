@@ -93,7 +93,7 @@ session_start();
                                     <form action="register.php" method="POST" class="row g-3 needs-validation" novalidate>
 
                                         <div class="col-12">
-                                         <label for="name" class="form-label">Name</label>
+                                         <label for="name" class="form-label">Full Name</label>
                                             <input type="text" class="form-control" id="name" name="username" required>
                                             <div class="invalid-feedback" style="font-size:14px" id="">
                                                 Please enter the name
@@ -120,6 +120,22 @@ session_start();
                                         <div class="col-12">
                                           <label for="email" class="form-label">Email</label>
                                           <input type="email" class="form-control" id="email" name="email" required>
+                                            <div class="invalid-feedback" style="font-size:14px" id="">
+                                                Please enter the email address
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12">
+                                          <label for="email" class="form-label">Batch Year</label>
+                                          <input type="number" class="form-control" id="batchyear" name="batchyear" required placeholder="2022">
+                                            <div class="invalid-feedback" style="font-size:14px" id="">
+                                                Please enter the email address
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12">
+                                          <label for="email" class="form-label">Birthday</label>
+                                          <input type="date" class="form-control" id="birthday" name="birthday" required>
                                             <div class="invalid-feedback" style="font-size:14px" id="">
                                                 Please enter the email address
                                             </div>

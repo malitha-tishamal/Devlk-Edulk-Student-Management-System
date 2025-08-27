@@ -17,8 +17,13 @@ function respond($status, $message, $isAjax = false) {
 // Check if request is AJAX
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
-// Required fields
-$requiredFields = ['username', 'regno', 'nic', 'email', 'gender', 'address', 'nowstatus', 'mobile', 'mobile2', 'password'];
+// Required fields (added batchyear + birthday)
+$requiredFields = [
+    'username', 'regno', 'nic', 'email', 'gender', 'address',
+    'nowstatus', 'mobile', 'mobile2', 'password',
+    'batchyear', 'birthday'
+];
+
 foreach ($requiredFields as $field) {
     if (empty($_POST[$field])) {
         respond('error', ucfirst($field) . " is required.", $isAjax);
@@ -35,6 +40,8 @@ $address    = trim($_POST['address']);
 $nowstatus  = $_POST['nowstatus'];
 $mobile     = trim($_POST['mobile']);     // personal
 $mobile2    = trim($_POST['mobile2']);    // home
+$batchyear  = (int) $_POST['batchyear'];
+$birthday   = $_POST['birthday']; // YYYY-MM-DD
 $password   = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
 // NIC format check (old and new formats)
@@ -42,10 +49,12 @@ if (!preg_match("/^(\d{9}[VXvx]|\d{12})$/", $nic)) {
     respond('error', "Invalid NIC format.", $isAjax);
 }
 
-// Mobile validation (+94 7XXXXXXXX)
-//if (!preg_match("/^7\d{8}$/", $mobile) || !preg_match("/^7\d{8}$/", $mobile2)) {
-   // respond('error', "Invalid mobile number(s). Use format 7XXXXXXXX.", $isAjax);
-//}
+// Mobile validation (7XXXXXXXX) - optional
+/*
+if (!preg_match("/^7\d{8}$/", $mobile) || !preg_match("/^7\d{8}$/", $mobile2)) {
+    respond('error', "Invalid mobile number(s). Use format 7XXXXXXXX.", $isAjax);
+}
+*/
 
 // Check for existing regno or email
 $check = $conn->prepare("SELECT id FROM students WHERE regno = ? OR email = ?");
@@ -57,13 +66,16 @@ if ($result->num_rows > 0) {
     respond('error', "Registration number or email already exists.", $isAjax);
 }
 
-// Insert user
+// Insert user (added batchyear + birthday)
 $stmt = $conn->prepare("INSERT INTO students 
-    (name, regno, nic, email, gender, address, nowstatus, mobile, mobile2, password)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    (name, regno, nic, email, gender, address, nowstatus, mobile, mobile2, batchyear, birthday, password)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-$stmt->bind_param("ssssssssss", 
-    $name, $regno, $nic, $email, $gender, $address, $nowstatus, $mobile, $mobile2, $password);
+$stmt->bind_param(
+    "ssssssssssss", 
+    $name, $regno, $nic, $email, $gender, $address, 
+    $nowstatus, $mobile, $mobile2, $batchyear, $birthday, $password
+);
 
 if ($stmt->execute()) {
     respond('success', "Account created successfully.", $isAjax);

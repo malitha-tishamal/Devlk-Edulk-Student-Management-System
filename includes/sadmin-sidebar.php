@@ -221,8 +221,8 @@
                 </li>
 
                 <li>
-                    <a href="#.php">
-                        <i class="bi bi-circle"></i> <span>#</span>
+                    <a href="recording_students.php">
+                        <i class="bi bi-circle"></i> <span>Recording Attendance</span>
                     </a>
                 </li>
             </ul>
