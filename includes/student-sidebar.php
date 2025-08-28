@@ -44,6 +44,12 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" href="pages-student-review.php">
+                <i class="bi bi-flag-fill"></i> <span>Reviews & Reports</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" href="logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Log Out</span>

@@ -30,8 +30,9 @@ if ($search !== '') {
     $sql .= " AND (name LIKE '%$searchSafe%' OR regno LIKE '%$searchSafe%')";
 }
 if ($study_year !== '') {
-    $sql .= " AND LEFT(SUBSTRING_INDEX(regno, '/', -3), 2) = '$study_year'";
+    $sql .= " AND batch_year = '$study_year'";
 }
+
 if ($status !== '') {
     $sql .= " AND status = '$status'";
 }
@@ -39,8 +40,9 @@ if ($status !== '') {
 $result = $conn->query($sql);
 
 // Get all distinct study years from regno
-$yearQuery = "SELECT DISTINCT LEFT(SUBSTRING_INDEX(regno, '/', -3), 2) AS year FROM students ORDER BY year DESC";
+$yearQuery = "SELECT DISTINCT batch_year AS year FROM students ORDER BY year DESC";
 $yearResult = $conn->query($yearQuery);
+
 ?>
 
 <!DOCTYPE html>
@@ -81,17 +83,18 @@ $yearResult = $conn->query($yearQuery);
                   </div>
                   <div class="col-md-3">
                     <select name="study_year" class="form-select">
-                      <option value="">All Years</option>
-                      <?php
-                      if ($yearResult->num_rows > 0) {
-                        while ($y = $yearResult->fetch_assoc()) {
-                          $yearVal = $y['year'];
-                          $selected = ($study_year == $yearVal) ? 'selected' : '';
-                          echo "<option value='$yearVal' $selected>20$yearVal</option>";
-                        }
-                      }
-                      ?>
-                    </select>
+  <option value="">All Years</option>
+  <?php
+  if ($yearResult->num_rows > 0) {
+    while ($y = $yearResult->fetch_assoc()) {
+      $yearVal = $y['year'];
+      $selected = ($study_year == $yearVal) ? : '';
+      echo "<option value='$yearVal' $selected>$yearVal</option>";
+    }
+  }
+  ?>
+</select>
+
                   </div>
                   <div class="col-md-3">
                     <select name="status" class="form-select">
@@ -117,6 +120,8 @@ $yearResult = $conn->query($yearQuery);
                     <th>Reg ID</th>
                     <th>NIC</th>
                     <th>Email</th>
+                    <th>BirthDay</th>
+                    <th>Batch Year</th>
                     <th>Gender</th>
                     <th>Address</th>
                     <th>Now</th>
@@ -131,7 +136,7 @@ $yearResult = $conn->query($yearQuery);
                     <th>Edit</th>
                 </tr>
                 <tr>
-                    <th colspan="14" class="text-center"></th> <!-- Empty columns for alignment -->
+                    <th colspan="16" class="text-center"></th> <!-- Empty columns for alignment -->
                     <th class="text-center">Approve</th>
                     <th class="text-center">Disable</th>
                     <th class="text-center">Delete</th>
@@ -144,11 +149,13 @@ $yearResult = $conn->query($yearQuery);
     $status = strtolower($row['status']);
     echo "<tr>";
     echo "<td>{$row['id']}</td>";
-    echo "<td><img src='../{$row['profile_picture']}' width='40'></td>";
+    echo "<td><img src='../{$row['profile_picture']}' width='150'></td>";
     echo "<td>{$row['name']}</td>";
     echo "<td>{$row['regno']}</td>";
     echo "<td>{$row['nic']}</td>";
     echo "<td>{$row['email']}</td>";
+    echo "<td>{$row['birthday']}</td>";
+    echo "<td>{$row['batch_year']}</td>";
     echo "<td>{$row['gender']}</td>";
     echo "<td>{$row['address']}</td>";
     echo "<td>{$row['nowstatus']}</td>";

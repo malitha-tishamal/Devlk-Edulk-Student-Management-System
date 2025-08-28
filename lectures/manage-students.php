@@ -117,6 +117,8 @@ $yearResult = $conn->query($yearQuery);
                     <th>Reg ID</th>
                     <th>NIC</th>
                     <th>Email</th>
+                    <th>Batch Year</th>
+                    <th>BirthDay</th>
                     <th>Gender</th>
                     <th>Address</th>
                     <th>Now</th>
@@ -144,11 +146,15 @@ $yearResult = $conn->query($yearQuery);
     $status = strtolower($row['status']);
     echo "<tr>";
     echo "<td>{$row['id']}</td>";
-    echo "<td><img src='../{$row['profile_picture']}' width='40'></td>";
+    echo "<td><img src='../{$row['profile_picture']}' width='120'></td>";
     echo "<td>{$row['name']}</td>";
     echo "<td>{$row['regno']}</td>";
     echo "<td>{$row['nic']}</td>";
     echo "<td>{$row['email']}</td>";
+
+    echo "<td>{$row['batch_year']}</td>";
+    echo "<td>{$row['birthday']}</td>";
+
     echo "<td>{$row['gender']}</td>";
     echo "<td>{$row['address']}</td>";
     echo "<td>{$row['nowstatus']}</td>";

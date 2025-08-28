@@ -20,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $gender     = trim($_POST['gender']);
     $address    = trim($_POST['address']);
     $nowstatus  = trim($_POST['nowstatus']);
+    $birthday   = trim($_POST['birthday']);
+    $batch_year = trim($_POST['batch_year']);
 
     // Validation (basic)
     if (empty($name) || empty($email) || empty($regno)) {
@@ -31,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Prepare the update statement
     $query = "UPDATE students 
-              SET name = ?, regno = ?, nic = ?, email = ?, mobile = ?, gender = ?, address = ?, nowstatus = ?
+              SET name = ?, regno = ?, nic = ?, email = ?, mobile = ?, gender = ?, address = ?, nowstatus = ?, birthday = ?, batch_year = ?
               WHERE id = ?";
 
     $stmt = $conn->prepare($query);
@@ -43,7 +45,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 
-    $stmt->bind_param("ssssssssi", $name, $regno, $nic, $email, $mobile, $gender, $address, $nowstatus, $former_student_id);
+    $stmt->bind_param(
+        "ssssssssssi", 
+        $name, 
+        $regno, 
+        $nic, 
+        $email, 
+        $mobile, 
+        $gender, 
+        $address, 
+        $nowstatus, 
+        $birthday, 
+        $batch_year, 
+        $former_student_id
+    );
 
     if ($stmt->execute()) {
         $_SESSION['status'] = 'success';

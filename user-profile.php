@@ -225,6 +225,20 @@ document.addEventListener("DOMContentLoaded", function() {
                                                 </div>
                                             </div>
 
+                                             <div class="row mt-3">
+                                                <div class="col-lg-3 col-md-4 label">BirthDay</div>
+                                                <div class="col-lg-9 col-md-8">
+                                                    <input type="date" name="birthday" class="form-control w-75" value="<?php echo htmlspecialchars($user['birthday']); ?>" required>
+                                                </div>
+                                            </div>
+
+                                             <div class="row mt-3">
+                                                <div class="col-lg-3 col-md-4 label">Batch Year</div>
+                                                <div class="col-lg-9 col-md-8">
+                                                    <input type="number" name="batch_year" class="form-control w-75" value="<?php echo htmlspecialchars($user['batch_year']); ?>" required>
+                                                </div>
+                                            </div>
+
                                             <!-- Mobile Number -->
                                             <div class="row mt-3">
                                                 <div class="col-lg-3 col-md-4 label">Mobile Number</div>
@@ -238,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                                 <div class="col-lg-9 col-md-8">
                                                     <input type="radio" name="gender" value="Male" id="Male" <?php echo ($gender == 'Male') ? 'checked' : ''; ?>>&nbsp;&nbsp;Male
                                                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                                    <input type="radio" name="gender" value="Male" id="Female" <?php echo ($gender == 'Female') ? 'checked' : ''; ?>> &nbsp;&nbsp;Female
+                                                    <input type="radio" name="gender" value="Female" id="Female" <?php echo ($gender == 'Female') ? 'checked' : ''; ?>> &nbsp;&nbsp;Female
                                                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                                 </div>
                                             </div>
